@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoXinh - Trạm Chụp Ảnh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .filter-normal { filter: none; }
+        .filter-bw { filter: grayscale(100%); }
+        .filter-sepia { filter: sepia(80%); }
+        .filter-soft { filter: blur(1px) brightness(1.1) contrast(0.9); }
+    </style>
+</head>
+<body class="bg-pink-50 min-h-screen flex flex-col items-center p-4 font-sans">
+    <h1 class="text-2xl font-bold text-pink-500 mb-2">PhotoXinh</h1>
+    <p class="text-sm text-gray-500 mb-4">Capture Memories</p>
+
+    <!-- Camera View -->
+    <div class="relative w-full max-w-sm border-4 border-white rounded-xl overflow-hidden shadow-lg bg-black">
+        <video id="camera" class="w-full h-auto object-cover aspect-[3/4]" autoplay playsinline></video>
+        <div id="countdown" class="absolute inset-0 flex items-center justify-center text-7xl text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] hidden">3</div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mt-4 flex gap-3 w-full max-w-sm overflow-x-auto pb-2 snap-x">
+        <button onclick="setFilter('filter-normal')" class="snap-start px-4 py-2 bg-white rounded-full text-pink-500 text-sm font-medium shadow whitespace-nowrap">Bình thường</button>
+        <button onclick="setFilter('filter-bw')" class="snap-start px-4 py-2 bg-white rounded-full text-pink-500 text-sm font-medium shadow whitespace-nowrap">Đen Trắng</button>
+        <button onclick="setFilter('filter-sepia')" class="snap-start px-4 py-2 bg-white rounded-full text-pink-500 text-sm font-medium shadow whitespace-nowrap">Cổ điển</button>
+        <button onclick="setFilter('filter-soft')" class="snap-start px-4 py-2 bg-white rounded-full text-pink-500 text-sm font-medium shadow whitespace-nowrap">Mềm mại</button>
+    </div>
+
+    <!-- Capture Button -->
+    <button id="captureBtn" class="mt-6 w-20 h-20 bg-pink-400 rounded-full border-4 border-white shadow-xl flex items-center justify-center text-white font-bold text-lg active:scale-95 transition-transform" onclick="startCapture()">Chụp</button>
+
+    <!-- Result Area -->
+    <canvas id="resultCanvas" class="hidden mt-8 w-full max-w-sm shadow-xl rounded-sm"></canvas>
+    <button id="downloadBtn" class="hidden mt-6 mb-10 px-8 py-3 bg-pink-500 text-white rounded-full font-bold shadow-lg active:scale-95" onclick="downloadImage()">Tải Ảnh Về Máy</button>
+
+    <script>
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('resultCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentFilter = 'filter-normal';
+        let stream;
+
+        // Khởi động camera
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+            } catch (err) {
+                alert('Vui lòng cấp quyền truy cập camera để chụp ảnh!');
+            }
+        }
+
+        // Chọn màu
+        function setFilter(filterClass) {
+            video.className = `w-full h-auto object-cover aspect-[3/4] ${filterClass}`;
+            currentFilter = filterClass;
+        }
+
+        // Bắt đầu chụp
+        async function startCapture() {
+            const btn = document.getElementById('captureBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            const images = [];
+            
+            // Kích thước dải ảnh (Photo strip)
+            canvas.width = 400;
+            canvas.height = 1250; 
+            ctx.fillStyle = '#fce7f3'; // Nền hồng nhạt (pink-50)
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < 4; i++) {
+                await countdownTimer(3);
+                
+                // Hiệu ứng nháy Flash
+                const flash = document.createElement('div');
+                flash.className = 'fixed inset-0 bg-white z-50 opacity-90 transition-opacity duration-100';
+                document.body.appendChild(flash);
+                setTimeout(() => flash.remove(), 150);
+
+                // Chụp khung hình hiện tại
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                const tCtx = tempCanvas.getContext('2d');
+                
+                // Áp dụng filter lên ảnh tĩnh
+                if(currentFilter === 'filter-bw') tCtx.filter = 'grayscale(100%)';
+                if(currentFilter === 'filter-sepia') tCtx.filter = 'sepia(80%)';
+                if(currentFilter === 'filter-soft') tCtx.filter = 'blur(1px) brightness(1.1) contrast(0.9)';
+                
+                tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+                images.push(tempCanvas);
+            }
+
+            // Ghép 4 ảnh vào khung
+            images.forEach((img, idx) => {
+                const y = 30 + idx * 280;
+                // Cắt cúp ảnh cho vuông vức với khung
+                ctx.drawImage(img, 0, 0, img.width, img.height, 25, y, 350, 260);
+                // Viền trắng cho từng ảnh
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 10;
+                ctx.strokeRect(25, y, 350, 260);
+            });
+
+            // Chữ ký dưới cùng
+            ctx.fillStyle = '#ec4899'; // pink-500
+            ctx.font = 'bold 36px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('PhotoXinh', 200, 1195);
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '16px sans-serif';
+            ctx.fillText(new Date().toLocaleDateString('vi-VN'), 200, 1225);
+
+            // Hiển thị kết quả
+            canvas.classList.remove('hidden');
+            document.getElementById('downloadBtn').classList.remove('hidden');
+            
+            // Tắt camera để tiết kiệm pin sau khi chụp xong
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            video.parentElement.classList.add('hidden');
+            document.querySelector('.overflow-x-auto').classList.add('hidden');
+            btn.classList.add('hidden');
+            
+            // Cuộn xuống xem ảnh
+            canvas.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Hàm đếm ngược
+        function countdownTimer(seconds) {
+            return new Promise(resolve => {
+                const el = document.getElementById('countdown');
+                el.classList.remove('hidden');
+                let count = seconds;
+                el.innerText = count;
+                const intv = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        el.innerText = count;
+                    } else {
+                        clearInterval(intv);
+                        el.classList.add('hidden');
+                        resolve();
+                    }
+                }, 1000);
+            });
+        }
+
+        // Tải ảnh
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = `PhotoXinh_${new Date().getTime()}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        }
+
+        initCamera();
+    </script>
+</body>
+</html>
