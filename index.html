@@ -10,7 +10,6 @@
         .logo-font { font-family: 'Dancing Script', cursive; }
         ::-webkit-scrollbar { display: none; }
 
-        /* Container chứa camera: Tỷ lệ ngang 4:3 */
         .camera-container {
             position: relative;
             width: 100%;
@@ -28,7 +27,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            /* Mặc định lật camera trước */
             transform: scaleX(-1);
         }
     </style>
@@ -58,7 +56,7 @@
         </div>
         <div class="flex flex-col">
             <span class="mb-1 text-blue-500">Hỗ Trợ Chụp</span>
-            <button onclick="openFrameModal()" class="bg-pink-100 border border-pink-200 text-pink-500 px-4 py-1 rounded shadow-sm active:scale-95 transition">Chọn Khung</button>
+            <button onclick="openFrameSelectionModal()" class="bg-pink-100 border border-pink-200 text-pink-500 px-4 py-1 rounded shadow-sm active:scale-95 transition">Chọn Khung</button>
         </div>
     </div>
 
@@ -118,7 +116,7 @@
     <!-- BẢNG LÀM ĐẸP (Beauty Sliders) -->
     <div class="mt-8 px-4 mb-6 w-full max-w-sm mx-auto" id="beautyPanel">
         <h3 class="text-pink-500 font-bold mb-3 text-sm flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" /></svg>
             Làm đẹp Camera
         </h3>
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-pink-100 space-y-4">
@@ -167,27 +165,41 @@
         <button onclick="resetApp()" class="mt-4 text-gray-500 font-medium underline active:text-gray-700">Chụp lại ảnh khác</button>
     </div>
 
-    <!-- Modal Chọn Khung -->
-    <div id="frameModal" class="fixed inset-0 bg-black/60 z-50 hidden flex-col items-center justify-end">
-        <div class="bg-white w-full max-w-md h-[85vh] rounded-t-3xl p-4 flex flex-col transform transition-transform duration-300">
-            <div class="flex justify-between items-start mb-2">
-                <h2 class="text-gray-800 font-bold text-lg">Chọn Khung Hỗ Trợ Chụp</h2>
-                <button onclick="closeFrameModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+    <!-- Modal 1: Giao diện Chọn Khung (Lưới) -->
+    <div id="frameSelectionModal" class="fixed inset-0 bg-white z-50 hidden flex-col transition-transform duration-300">
+        <!-- Thanh tìm kiếm và nút đóng -->
+        <div class="p-4 border-b flex items-center gap-3">
+            <button onclick="closeFrameSelectionModal()" class="text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </button>
+            <div class="flex-1 relative">
+                <input type="text" id="searchInput" placeholder="Tìm tên khung..." class="w-full bg-gray-100 rounded-full py-2 px-4 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300" onkeyup="filterFrames()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
+        </div>
+        
+        <!-- Lưới hiển thị khung -->
+        <div class="grid grid-cols-3 gap-4 p-4 overflow-y-auto pb-10 flex-1" id="frameSelectionGrid">
+            <!-- Javascript sẽ tạo danh sách khung tại đây -->
+        </div>
+    </div>
+
+    <!-- Modal 2: Giao diện Xem Trước & Áp Dụng Khung -->
+    <div id="framePreviewModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex-col items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl relative flex flex-col">
+            <!-- Nút Đóng -->
+            <button onclick="closeFramePreviewModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 bg-white rounded-full p-1 shadow z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
             
-            <div class="w-full flex-1 mb-4 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
-                <img id="modalPreviewImg" src="1.png" class="h-full object-contain drop-shadow-md" alt="Preview">
+            <!-- Xem trước Khung -->
+            <div class="w-full flex-1 bg-gray-100 flex items-center justify-center p-4 h-[65vh]">
+                <img id="previewModalImg" src="" class="h-full object-contain drop-shadow-md" alt="Preview">
             </div>
 
-            <div class="flex gap-4 mb-4">
-                <button onclick="confirmFrame()" class="flex-1 bg-pink-500 text-white font-bold py-3 rounded-xl shadow-md active:bg-pink-600 transition">OK, Chọn khung này</button>
-            </div>
-
-            <p class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Các khung khác:</p>
-            <div class="grid grid-cols-4 gap-2 overflow-y-auto pb-4" id="frameGrid">
-                <!-- Javascript sẽ tạo danh sách khung tại đây -->
+            <!-- Nút Áp Dụng -->
+            <div class="p-4 bg-white border-t">
+                <button onclick="applySelectedFrame()" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg shadow-md active:bg-blue-600 transition">Áp dụng khung</button>
             </div>
         </div>
     </div>
@@ -203,17 +215,17 @@
         
         let stream;
         let useFrontCamera = true;
-        let rawImages = []; // Lưu ảnh sau mỗi lần chụp
-        let isProcessing = false; // Ngăn bấm linh tinh khi đang xử lý
+        let rawImages = [];
+        let isProcessing = false;
         
-        // Tên file khung được cập nhật thành 1.png
+        // Danh sách khung
         const developerFrames = [
             { id: 'f1', name: 'Thiên Nga Hồng', src: '1.png' },
             { id: 'f2', name: 'Tình Yêu', src: '2.png' }
         ];
         
         let selectedFrameSrc = developerFrames.length > 0 ? developerFrames[0].src : ''; 
-        let pendingFrameSrc = selectedFrameSrc; 
+        let currentViewingFrameSrc = ''; // Khung đang xem trước trong modal 2
 
         // Khởi tạo Camera (Tỷ lệ 4:3)
         async function initCamera() {
@@ -230,7 +242,6 @@
             } catch (err) { alert('Vui lòng cấp quyền camera trong cài đặt trình duyệt!'); }
         }
 
-        // Lật camera trước/sau
         function switchCamera() { 
             useFrontCamera = !useFrontCamera; 
             video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
@@ -241,70 +252,93 @@
         function updateBeauty() {
             const whitening = document.getElementById('slider-whitening').value;
             const smoothing = document.getElementById('slider-smoothing').value;
-            // Áp dụng CSS filter lên video trực tiếp
             video.style.filter = `brightness(${whitening}%) blur(${smoothing}px)`;
         }
 
         function alertAIDisabled() {
-            // Thông báo nhỏ khi người dùng kéo thanh trượt hình thể
             const val = event.target.value;
             if(val > 10) {
                 console.log("Face Morphing requires AI library!");
             }
         }
 
-        // --- HỆ THỐNG KHUNG ---
-        function renderFramesInModal() {
-            const grid = document.getElementById('frameGrid');
-            grid.innerHTML = '';
-            document.getElementById('modalPreviewImg').src = pendingFrameSrc || '';
+        // --- HỆ THỐNG KHUNG (UI MỚI) ---
+        // Mở Modal 1 (Lưới Chọn Khung)
+        function openFrameSelectionModal() {
+            renderFrameSelectionGrid();
+            document.getElementById('frameSelectionModal').classList.remove('hidden');
+            document.getElementById('frameSelectionModal').classList.add('flex');
+            document.getElementById('searchInput').value = ''; // Xóa tìm kiếm cũ
+        }
 
-            developerFrames.forEach(frame => {
-                const isSelected = pendingFrameSrc === frame.src;
+        function closeFrameSelectionModal() {
+            document.getElementById('frameSelectionModal').classList.add('hidden');
+            document.getElementById('frameSelectionModal').classList.remove('flex');
+        }
+
+        // Hiển thị danh sách khung dạng lưới
+        function renderFrameSelectionGrid(filterText = '') {
+            const grid = document.getElementById('frameSelectionGrid');
+            grid.innerHTML = '';
+            
+            const filteredFrames = developerFrames.filter(frame => 
+                frame.name.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            filteredFrames.forEach(frame => {
                 const div = document.createElement('div');
-                div.className = `cursor-pointer p-1 rounded-lg ${isSelected ? 'bg-pink-100 border-2 border-pink-400' : 'border border-gray-200'}`;
-                div.onclick = () => {
-                    pendingFrameSrc = frame.src;
-                    renderFramesInModal(); 
-                };
-                div.innerHTML = `<img src="${frame.src}" onerror="this.src=''" class="w-full aspect-[1/3] object-cover bg-gray-100 rounded" alt="${frame.name}">`;
+                div.className = `flex flex-col items-center cursor-pointer group`;
+                div.onclick = () => openFramePreviewModal(frame.src);
+                
+                div.innerHTML = `
+                    <div class="w-full aspect-[1/3] bg-gray-100 rounded-xl overflow-hidden shadow-sm group-active:scale-95 transition mb-2">
+                        <img src="${frame.src}" onerror="this.src=''" class="w-full h-full object-cover" alt="${frame.name}">
+                    </div>
+                    <span class="text-xs text-gray-700 font-medium text-center truncate w-full">${frame.name}</span>
+                `;
                 grid.appendChild(div);
             });
         }
 
-        function openFrameModal() {
-            pendingFrameSrc = selectedFrameSrc;
-            renderFramesInModal();
-            document.getElementById('frameModal').classList.remove('hidden');
-            document.getElementById('frameModal').classList.add('flex');
+        // Lọc khung theo ô tìm kiếm
+        function filterFrames() {
+            const searchText = document.getElementById('searchInput').value;
+            renderFrameSelectionGrid(searchText);
         }
 
-        function closeFrameModal() {
-            document.getElementById('frameModal').classList.add('hidden');
-            document.getElementById('frameModal').classList.remove('flex');
+        // Mở Modal 2 (Xem Trước)
+        function openFramePreviewModal(src) {
+            currentViewingFrameSrc = src;
+            document.getElementById('previewModalImg').src = src;
+            document.getElementById('framePreviewModal').classList.remove('hidden');
+            document.getElementById('framePreviewModal').classList.add('flex');
         }
 
-        function confirmFrame() {
-            selectedFrameSrc = pendingFrameSrc;
-            closeFrameModal();
+        function closeFramePreviewModal() {
+            document.getElementById('framePreviewModal').classList.add('hidden');
+            document.getElementById('framePreviewModal').classList.remove('flex');
+            currentViewingFrameSrc = '';
+        }
+
+        // Nút "Áp dụng khung"
+        function applySelectedFrame() {
+            selectedFrameSrc = currentViewingFrameSrc;
+            closeFramePreviewModal();
+            closeFrameSelectionModal();
         }
 
         // --- HỆ THỐNG CHỤP ẢNH ---
-        // 1. Chụp 1 phát ăn luôn (dùng chung cho Auto và Tay)
         function takeSnapshot() {
-            // Hiệu ứng nháy Flash
             const flash = document.createElement('div');
             flash.className = 'fixed inset-0 bg-white z-[60] opacity-100 transition-opacity duration-150';
             document.body.appendChild(flash);
             setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 150); }, 50);
 
-            // Tạo canvas tạm thời để lưu ảnh
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = video.videoWidth;
             tempCanvas.height = video.videoHeight;
             const tCtx = tempCanvas.getContext('2d');
             
-            // Áp dụng thông số làm đẹp vào ảnh tĩnh
             const whitening = document.getElementById('slider-whitening').value;
             const smoothing = document.getElementById('slider-smoothing').value;
             tCtx.filter = `brightness(${whitening}%) blur(${smoothing}px)`;
@@ -319,11 +353,8 @@
             shootCountEl.innerText = rawImages.length.toString();
         }
 
-        // 2. Chụp bằng tay
         async function captureManual() {
             if (isProcessing || rawImages.length >= 4) return;
-            
-            // Đợi 1 giây để người dùng tạo dáng sau khi bấm bấm nút
             await countdownTimer(1);
             takeSnapshot();
 
@@ -332,7 +363,6 @@
             }
         }
 
-        // 3. Chụp tự động (4 tấm liên tục)
         async function startAutoCapture() {
             if (isProcessing) return;
             isProcessing = true;
@@ -353,7 +383,6 @@
             isProcessing = false;
         }
 
-        // Đếm ngược màn hình
         function countdownTimer(seconds) {
             return new Promise(resolve => {
                 const el = document.getElementById('countdown');
@@ -368,11 +397,10 @@
             });
         }
 
-        // GIAI ĐOẠN GHÉP ẢNH VÀO KHUNG VÀ RENDER
+        // GIAI ĐOẠN GHÉP ẢNH VÀO KHUNG
         async function processFinalImage() {
             isProcessing = true;
             
-            // Kích thước chuẩn KHUNG (1200x3600)
             const CANVAS_WIDTH = 1200;
             const CANVAS_HEIGHT = 3600;
             canvas.width = CANVAS_WIDTH;
@@ -387,7 +415,6 @@
             const marginTop = 120; 
             const gapY = 100; 
 
-            // Vẽ 4 ảnh camera vào đúng toạ độ lỗ thủng
             rawImages.forEach((img, idx) => {
                 const drawX = marginX;
                 const drawY = marginTop + idx * (holeH + gapY); 
@@ -408,7 +435,6 @@
                 ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, drawX, drawY, holeW, holeH);
             });
 
-            // Vẽ đè Khung lên trên cùng
             if (selectedFrameSrc) {
                 await new Promise(resolve => {
                     const frameImg = new Image();
@@ -417,14 +443,13 @@
                         resolve();
                     };
                     frameImg.onerror = () => {
-                        console.warn("Không tìm thấy ảnh khung:", selectedFrameSrc, "- Trả về ảnh nền trắng");
-                        resolve(); // BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ WEB KHÔNG BỊ TREO
+                        console.warn("Không tìm thấy ảnh khung:", selectedFrameSrc);
+                        resolve(); 
                     };
                     frameImg.src = selectedFrameSrc;
                 });
             }
 
-            // Chuyển giao diện sang kết quả
             mainCameraArea.classList.add('hidden'); 
             beautyPanel.classList.add('hidden');
             
@@ -435,7 +460,6 @@
             isProcessing = false;
         }
 
-        // Xoá trắng làm lại từ đầu
         function resetApp() {
             rawImages = [];
             shootCountEl.innerText = '0';
@@ -450,7 +474,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Tải xuống
         function downloadImage() {
             const link = document.createElement('a');
             link.download = `HQ_Photo_${new Date().getTime()}.png`;
@@ -458,9 +481,8 @@
             link.click();
         }
 
-        // Khởi động
         initCamera();
-        updateBeauty(); // Áp dụng độ sáng mặc định
+        updateBeauty(); 
     </script>
 </body>
 </html>
