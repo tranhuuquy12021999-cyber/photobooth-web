@@ -14,9 +14,43 @@
         .filter-soft { filter: blur(1px) brightness(1.1) contrast(0.9); }
         .filter-retro { filter: contrast(1.2) saturate(1.2) sepia(0.3); }
         ::-webkit-scrollbar { display: none; }
+
+        /* Container chứa camera để dễ dàng phủ khung lên trên */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            /* Đảm bảo tỷ lệ 3:4 cho container */
+            aspect-ratio: 3 / 4; 
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            background: black;
+            border: 4px solid white;
+        }
+
+        /* Video lấp đầy container, cắt cúp nếu cần để giữ tỷ lệ */
+        #camera {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Khung overlay phủ vừa vặn lên container */
+        #liveFrameOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Hoặc 'fill' tùy thuộc vào việc bạn muốn khung hiển thị thế nào trên preview */
+            pointer-events: none;
+            z-index: 10;
+        }
     </style>
 </head>
-<body class="bg-pink-50 min-h-screen font-sans overflow-x-hidden relative">
+<body class="bg-pink-50 min-h-screen font-sans overflow-x-hidden relative flex flex-col">
 
     <!-- Top Header -->
     <div class="flex justify-end items-center p-4 pb-2">
@@ -28,7 +62,6 @@
 
     <!-- Settings Row -->
     <div class="flex justify-start gap-6 px-4 mb-4 text-xs font-semibold text-pink-400">
-        <!-- Đếm ngược -->
         <div class="flex flex-col">
             <span class="mb-1">Đếm Ngược</span>
             <div class="relative bg-white border border-pink-200 rounded px-2 py-1 flex items-center">
@@ -40,104 +73,113 @@
                 <span class="absolute right-2 text-pink-300 pointer-events-none">v</span>
             </div>
         </div>
-        <!-- Chọn Khung -->
         <div class="flex flex-col">
             <span class="mb-1 text-blue-500">Hỗ Trợ Chụp</span>
             <button onclick="openFrameModal()" class="bg-pink-100 border border-pink-200 text-pink-500 px-4 py-1 rounded shadow-sm active:scale-95 transition">Chọn Khung</button>
         </div>
     </div>
 
-    <!-- Camera View -->
-    <div class="px-4 flex justify-center w-full relative">
-        <div id="cameraWrapper" class="relative w-full max-w-sm rounded-xl overflow-hidden shadow-md bg-black border-4 border-white transition-all duration-300">
-            <video id="camera" class="w-full h-auto object-cover aspect-[3/4]" autoplay playsinline></video>
-            
-            <!-- Khung overlay hiển thị trực tiếp (Bằng hình ảnh) -->
-            <div class="absolute inset-0 pointer-events-none z-10">
-                <img id="liveFrameOverlay" src="" class="w-full h-full object-cover hidden opacity-80" alt="Khung trợ chụp">
+    <!-- Vùng Camera & Các Nút Điều Khiển Chụp -->
+    <div id="mainCameraArea" class="flex flex-col items-center w-full">
+        <!-- Camera View -->
+        <div class="px-4 flex justify-center w-full relative">
+            <div class="camera-container transition-all duration-300">
+                <video id="camera" autoplay playsinline></video>
+                <img id="liveFrameOverlay" src="" class="hidden opacity-80" alt="Khung trợ chụp">
+
+                <!-- Nút Flash & Switch -->
+                <button class="absolute top-3 left-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-700 shadow z-20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
+                </button>
+                <button onclick="switchCamera()" class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow active:scale-90 transition z-20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                </button>
+
+                <!-- Bộ đếm ảnh -->
+                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-300 text-white text-xs px-4 py-1.5 rounded-full font-bold shadow z-20">
+                    Đã Chụp <span id="shootCount">0</span>/4
+                </div>
+
+                <!-- Đếm ngược -->
+                <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30">3</div>
             </div>
-
-            <!-- Nút Flash & Switch Camera -->
-            <button class="absolute top-3 left-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-700 shadow z-20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
-            </button>
-            <button onclick="switchCamera()" class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow active:scale-90 transition z-20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
-            </button>
-
-            <!-- Bộ đếm ảnh -->
-            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-300 text-white text-xs px-4 py-1.5 rounded-full font-bold shadow z-20">
-                Đã Chụp <span id="shootCount">0</span>/4
-            </div>
-
-            <!-- Đếm ngược lớn -->
-            <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30">3</div>
         </div>
-    </div>
 
-    <!-- Cụm nút chụp (Giữ nguyên) -->
-    <div class="flex justify-center items-center gap-6 mt-6 w-full max-w-sm mx-auto">
-        <button class="flex flex-col items-center group active:scale-95 transition">
-            <div class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center shadow-inner text-pink-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </div>
-            <span class="text-[10px] text-pink-400 font-medium mt-1">Chụp tay</span>
-        </button>
+        <!-- Capture Controls -->
+        <div class="flex justify-center items-center gap-6 mt-6 w-full max-w-sm mx-auto">
+            <button class="flex flex-col items-center group active:scale-95 transition">
+                <div class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center shadow-inner text-pink-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </div>
+                <span class="text-[10px] text-pink-400 font-medium mt-1">Chụp tay</span>
+            </button>
 
-        <button id="captureBtn" onclick="startAutoCapture()" class="flex flex-col items-center group active:scale-95 transition">
-            <div class="w-20 h-20 bg-pink-400 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(244,114,182,0.6)] text-white border-4 border-white relative">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span class="absolute bottom-2 text-[9px] font-bold tracking-wider">AUTO</span>
-            </div>
-        </button>
+            <button id="captureBtn" onclick="startAutoCapture()" class="flex flex-col items-center group active:scale-95 transition">
+                <div class="w-20 h-20 bg-pink-400 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(244,114,182,0.6)] text-white border-4 border-white relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span class="absolute bottom-2 text-[9px] font-bold tracking-wider">AUTO</span>
+                </div>
+            </button>
 
-        <button onclick="resetApp()" class="flex flex-col items-center group active:scale-95 transition">
-            <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow text-green-500">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            </div>
-            <span class="text-[10px] text-green-500 font-medium mt-1">Chụp lại</span>
-        </button>
-    </div>
+            <button onclick="resetApp()" class="flex flex-col items-center group active:scale-95 transition">
+                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow text-green-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </div>
+                <span class="text-[10px] text-green-500 font-medium mt-1">Chụp lại</span>
+            </button>
+        </div>
 
-    <!-- Tải ảnh lên -->
-    <div class="flex justify-center mt-4">
-        <button class="flex items-center gap-2 bg-blue-50 text-blue-500 px-4 py-1.5 rounded-full text-xs shadow-sm font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            Tải ảnh lên
-        </button>
-    </div>
+        <div class="flex justify-center mt-4">
+            <button class="flex items-center gap-2 bg-blue-50 text-blue-500 px-4 py-1.5 rounded-full text-xs shadow-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                Tải ảnh lên
+            </button>
+        </div>
+    </div> <!-- End mainCameraArea -->
 
     <!-- Bộ Lọc Màu -->
-    <div class="mt-6 px-4 mb-20">
+    <div class="mt-6 px-4 mb-6">
         <h3 class="text-pink-500 font-bold mb-3 text-sm">Bộ lọc màu</h3>
         <div class="flex gap-3 overflow-x-auto pb-2 snap-x">
-            <button onclick="setFilter('filter-normal')" class="snap-start px-5 py-2 bg-pink-200 rounded-full text-pink-600 text-xs font-bold shadow-sm whitespace-nowrap">Bình Thường</button>
-            <button onclick="setFilter('filter-retro')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100">Mono (Retro)</button>
-            <button onclick="setFilter('filter-bw')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100">Đen Trắng</button>
-            <button onclick="setFilter('filter-soft')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100">Mềm Mại</button>
-            <button onclick="setFilter('filter-sepia')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100">Dazz Classic</button>
+            <button onclick="setFilter('filter-normal')" class="snap-start px-5 py-2 bg-pink-200 rounded-full text-pink-600 text-xs font-bold shadow-sm whitespace-nowrap filter-btn">Bình Thường</button>
+            <button onclick="setFilter('filter-retro')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Mono (Retro)</button>
+            <button onclick="setFilter('filter-bw')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Đen Trắng</button>
+            <button onclick="setFilter('filter-soft')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Mềm Mại</button>
+            <button onclick="setFilter('filter-sepia')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Dazz Classic</button>
         </div>
     </div>
 
-    <!-- Vùng Kết quả & Download -->
-    <div class="px-4 flex flex-col items-center mb-10">
-        <canvas id="resultCanvas" class="hidden w-full max-w-sm shadow-2xl rounded-sm"></canvas>
-        <button id="downloadBtn" class="hidden mt-6 px-10 py-3 bg-pink-500 text-white rounded-full font-bold shadow-lg shadow-pink-300 active:scale-95 transition text-lg w-full max-w-sm" onclick="downloadImage()">⬇ Tải Ảnh Về Máy</button>
+    <!-- Vùng Kết quả & Download (Nằm dưới bộ lọc) -->
+    <div id="resultArea" class="px-4 flex-col items-center mb-10 hidden">
+        <canvas id="resultCanvas" class="w-full max-w-[360px] shadow-2xl rounded-md bg-white"></canvas>
+        <button onclick="downloadImage()" class="mt-6 px-10 py-3 bg-pink-500 text-white rounded-full font-bold shadow-lg shadow-pink-300 active:scale-95 transition text-lg w-full max-w-[360px]">⬇ Tải Ảnh Về Máy</button>
+        <button onclick="resetApp()" class="mt-4 text-gray-500 font-medium underline active:text-gray-700">Chụp lại ảnh khác</button>
     </div>
 
     <!-- Modal Chọn Khung Hình Ảnh -->
     <div id="frameModal" class="fixed inset-0 bg-black/60 z-50 hidden flex-col items-center justify-end">
-        <div class="bg-white w-full max-w-md h-[80vh] rounded-t-3xl p-4 flex flex-col transform transition-transform duration-300">
+        <div class="bg-white w-full max-w-md h-[85vh] rounded-t-3xl p-4 flex flex-col transform transition-transform duration-300">
             <div class="flex justify-between items-start mb-2">
                 <h2 class="text-gray-800 font-bold text-lg">Chọn Khung Hỗ Trợ Chụp</h2>
                 <button onclick="closeFrameModal()" class="text-gray-400 hover:text-gray-600">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-            <p class="text-xs text-green-600 mb-4 bg-green-50 p-2 rounded">Khung sẽ được ghép đè lên ảnh thật của bạn.</p>
             
-            <div class="grid grid-cols-3 gap-3 overflow-y-auto pb-10" id="frameGrid">
-                <!-- Javascript sẽ tạo khung tại đây -->
+            <!-- Khu vực xem trước lớn ở trên -->
+            <div class="w-full flex-1 mb-4 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
+                <img id="modalPreviewImg" src="khung-thien-nga.png" class="h-full object-contain drop-shadow-md" alt="Preview">
+            </div>
+
+            <!-- Nút xác nhận & Chọn lại -->
+            <div class="flex gap-4 mb-4">
+                <button onclick="confirmFrame()" class="flex-1 bg-pink-500 text-white font-bold py-3 rounded-xl shadow-md active:bg-pink-600 transition">OK, Chọn khung này</button>
+            </div>
+
+            <!-- Danh sách khung nhỏ ở dưới -->
+            <p class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Các khung khác:</p>
+            <div class="grid grid-cols-4 gap-2 overflow-y-auto pb-4" id="frameGrid">
+                <!-- Javascript sẽ tạo danh sách khung tại đây -->
             </div>
         </div>
     </div>
@@ -147,28 +189,31 @@
         const canvas = document.getElementById('resultCanvas');
         const ctx = canvas.getContext('2d');
         const shootCountEl = document.getElementById('shootCount');
+        const mainCameraArea = document.getElementById('mainCameraArea');
+        const resultArea = document.getElementById('resultArea');
+        
         let currentFilter = 'filter-normal';
         let stream;
         let useFrontCamera = true;
         
-        // ==========================================
-        // CÁCH THÊM KHUNG MỚI VÀO ĐÂY
-        // ==========================================
+        // CHỈ CÓ KHUNG CỦA DEVELOPER (Loại bỏ Không Khung và Basic)
         const developerFrames = [
-            { id: 'f0', name: 'Không Khung', src: '' }, // Mặc định không có khung
-            { id: 'f1', name: 'Thiên Nga Hồng', src: '1.png' },
-            { id: 'f2', name: 'Khung Basic', src: 'khung-basic.png' }
-            // Thêm các khung khác bằng cách copy dòng trên, đổi 'id', 'name' và tên file ảnh 'src'
+            { id: 'f1', name: 'Thiên Nga Hồng', src: '1.png' }
+            // Thêm khung khác bằng cách copy dòng trên
         ];
         
-        let selectedFrameSrc = ''; // Khung đang được chọn
+        let selectedFrameSrc = developerFrames.length > 0 ? developerFrames[0].src : ''; 
+        let pendingFrameSrc = selectedFrameSrc; // Dùng lưu tạm khi đang chọn trong modal
 
-        // Khởi tạo Camera
+        // Khởi tạo Camera (Tỷ lệ 3:4)
         async function initCamera() {
             if (stream) { stream.getTracks().forEach(track => track.stop()); }
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: useFrontCamera ? 'user' : 'environment' },
+                    video: { 
+                        facingMode: useFrontCamera ? 'user' : 'environment',
+                        aspectRatio: 3/4 // Yêu cầu camera ưu tiên tỷ lệ dọc 3:4
+                    },
                     audio: false
                 });
                 video.srcObject = stream;
@@ -178,9 +223,11 @@
         function switchCamera() { useFrontCamera = !useFrontCamera; initCamera(); }
 
         function setFilter(filterClass) {
-            video.className = `w-full h-auto object-cover aspect-[3/4] ${filterClass}`;
+            // Áp dụng filter lên video
+            video.className = filterClass;
             currentFilter = filterClass;
-            document.querySelectorAll('.overflow-x-auto button').forEach(btn => {
+            // Cập nhật UI nút
+            document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('bg-pink-200', 'text-pink-600', 'font-bold');
                 btn.classList.add('bg-white', 'text-gray-600', 'font-medium');
             });
@@ -188,31 +235,33 @@
             event.target.classList.add('bg-pink-200', 'text-pink-600', 'font-bold');
         }
 
-        // --- Logic Chọn Khung Ảnh ---
-        function renderFrames() {
+        // --- Logic Chọn Khung Ảnh (Cập nhật) ---
+        function renderFramesInModal() {
             const grid = document.getElementById('frameGrid');
             grid.innerHTML = '';
+            
+            // Cập nhật ảnh Preview lớn
+            document.getElementById('modalPreviewImg').src = pendingFrameSrc || '';
+
             developerFrames.forEach(frame => {
-                const isSelected = selectedFrameSrc === frame.src;
+                const isSelected = pendingFrameSrc === frame.src;
                 const div = document.createElement('div');
-                div.className = `flex flex-col items-center gap-1 cursor-pointer p-1 rounded-lg ${isSelected ? 'bg-pink-100 border-2 border-pink-400' : ''}`;
-                div.onclick = () => selectFrame(frame.src);
+                div.className = `cursor-pointer p-1 rounded-lg ${isSelected ? 'bg-pink-100 border-2 border-pink-400' : 'border border-gray-200'}`;
+                div.onclick = () => {
+                    pendingFrameSrc = frame.src;
+                    renderFramesInModal(); // Render lại để cập nhật viền chọn & Preview lớn
+                };
                 
-                // Cấu trúc hiển thị ảnh thu nhỏ của khung
-                let imgHtml = frame.src === '' 
-                    ? `<div class="w-full aspect-[1/3] bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">Trống</div>`
-                    : `<img src="${frame.src}" class="w-full aspect-[1/3] object-contain bg-gray-100 rounded" alt="${frame.name}">`;
-                    
                 div.innerHTML = `
-                    ${imgHtml}
-                    <span class="text-[10px] font-bold text-gray-700 text-center mt-1 truncate w-full">${frame.name}</span>
+                    <img src="${frame.src}" class="w-full aspect-[1/3] object-cover bg-gray-100 rounded" alt="${frame.name}">
                 `;
                 grid.appendChild(div);
             });
         }
 
         function openFrameModal() {
-            renderFrames();
+            pendingFrameSrc = selectedFrameSrc; // Lấy khung hiện tại làm nháp
+            renderFramesInModal();
             document.getElementById('frameModal').classList.remove('hidden');
             document.getElementById('frameModal').classList.add('flex');
         }
@@ -222,34 +271,35 @@
             document.getElementById('frameModal').classList.remove('flex');
         }
 
-        function selectFrame(src) {
-            selectedFrameSrc = src;
+        function confirmFrame() {
+            selectedFrameSrc = pendingFrameSrc;
             const overlay = document.getElementById('liveFrameOverlay');
-            if(src === '') {
-                overlay.classList.add('hidden');
-                overlay.src = '';
-            } else {
+            if(selectedFrameSrc) {
+                overlay.src = selectedFrameSrc;
                 overlay.classList.remove('hidden');
-                overlay.src = src;
+            } else {
+                overlay.classList.add('hidden');
             }
             closeFrameModal();
         }
 
-        // --- Logic Chụp Tự Động ---
+        // --- Logic Chụp Tự Động (Căn chỉnh Pixel) ---
         async function startAutoCapture() {
             const btn = document.getElementById('captureBtn');
             const countdownVal = parseInt(document.getElementById('countdownSelect').value);
             btn.disabled = true; btn.classList.add('opacity-50');
             shootCountEl.innerText = '0';
-            const images = [];
+            const rawImages = [];
             
-            // Kích thước chuẩn của dải ảnh 1x4 (ví dụ 400x1200)
-            canvas.width = 400;
-            canvas.height = 1200; 
+            // Kích thước chuẩn KHUNG (1200x3600)
+            const CANVAS_WIDTH = 1200;
+            const CANVAS_HEIGHT = 3600;
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT; 
 
-            // Nền trắng mặc định đằng sau ảnh
+            // Nền trắng
             ctx.fillStyle = '#ffffff'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
             for (let i = 0; i < 4; i++) {
                 await countdownTimer(countdownVal);
@@ -274,41 +324,76 @@
                     tCtx.translate(tempCanvas.width, 0);
                     tCtx.scale(-1, 1);
                 }
+                
+                // Vẽ ảnh raw từ video
                 tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-                images.push(tempCanvas);
+                rawImages.push(tempCanvas);
                 shootCountEl.innerText = (i + 1).toString();
             }
 
-            // 1. Vẽ 4 bức ảnh camera vào canvas trước
-            images.forEach((img, idx) => {
-                // Toạ độ y được tính toán để khớp với phần "lỗ hổng" đen của khung mẫu bạn gửi
-                // Lưu ý: Các toạ độ này có thể cần tinh chỉnh tuỳ thuộc vào file ảnh khung cụ thể của bạn
-                const y = 25 + idx * 285; 
-                ctx.drawImage(img, 0, 0, img.width, img.height, 20, y, 360, 260);
+            // GIAI ĐOẠN GHÉP ẢNH
+            // Thông số cấu hình từ yêu cầu:
+            const holeW = 960;
+            const holeH = 640; // Lỗ thủng nằm ngang, tức ảnh phải ngang? 
+            // SỬA LẠI: Nếu lề trái phải là 120px trên khung 1200px: 1200 - 120*2 = 960px.
+            // Vậy lỗ thủng rộng 960px, cao 640px. (Tỷ lệ ngang 3:2, KHÁC với tỷ lệ dọc 3:4 của camera).
+            // Do đó ta cần vẽ ảnh camera (dọc) tràn đều (cover) vào lỗ thủng (ngang)
+            const marginX = 120;
+            const marginTop = 120; // Lề trên
+            const gapY = 100; // Khoảng cách giữa các ảnh
+
+            rawImages.forEach((img, idx) => {
+                const drawX = marginX;
+                // Tính toạ độ Y của từng lỗ thủng
+                // Ảnh 0: 120
+                // Ảnh 1: 120 + 640 + 100 = 860
+                // Ảnh 2: 860 + 640 + 100 = 1600
+                // Ảnh 3: 1600 + 640 + 100 = 2340
+                const drawY = marginTop + idx * (holeH + gapY); 
+
+                // Vẽ ảnh cover vào khung (cắt bớt phần thừa để khớp lỗ thủng)
+                // Ảnh raw (3:4) cần vẽ vào lỗ (3:2), ta sẽ crop giữa theo chiều dọc
+                const rawRatio = img.width / img.height;
+                const holeRatio = holeW / holeH;
+                
+                let sourceX = 0, sourceY = 0, sourceW = img.width, sourceH = img.height;
+                
+                if (rawRatio < holeRatio) {
+                    // Ảnh hẹp hơn lỗ (Ảnh dọc, lỗ ngang) -> Cắt trên dưới
+                    sourceH = img.width / holeRatio;
+                    sourceY = (img.height - sourceH) / 2;
+                } else {
+                    // Ảnh rộng hơn lỗ -> Cắt 2 bên
+                    sourceW = img.height * holeRatio;
+                    sourceX = (img.width - sourceW) / 2;
+                }
+
+                ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, drawX, drawY, holeW, holeH);
             });
 
-            // 2. Vẽ đè Khung (Frame) lên trên cùng
-            if (selectedFrameSrc !== '') {
+            // VẼ ĐÈ KHUNG LÊN TRÊN
+            if (selectedFrameSrc) {
                 await new Promise(resolve => {
                     const frameImg = new Image();
                     frameImg.onload = () => {
-                        ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(frameImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                         resolve();
                     };
                     frameImg.src = selectedFrameSrc;
                 });
             }
 
-            // Hiển thị kết quả
-            canvas.classList.remove('hidden');
-            document.getElementById('downloadBtn').classList.remove('hidden');
-            document.getElementById('cameraWrapper').classList.add('hidden');
+            // Hiển thị kết quả dưới bộ lọc
+            mainCameraArea.classList.add('hidden'); // Ẩn vùng chụp
+            resultArea.classList.remove('hidden'); // Hiện vùng kết quả
+            resultArea.classList.add('flex');
+            
             btn.classList.remove('opacity-50'); btn.disabled = false;
             
-            canvas.scrollIntoView({ behavior: 'smooth' });
+            // Cuộn mượt mà xuống xem kết quả
+            resultArea.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Đếm ngược
         function countdownTimer(seconds) {
             return new Promise(resolve => {
                 const el = document.getElementById('countdown');
@@ -324,11 +409,17 @@
         }
 
         function resetApp() {
-            canvas.classList.add('hidden');
-            document.getElementById('downloadBtn').classList.add('hidden');
-            document.getElementById('cameraWrapper').classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            resultArea.classList.remove('flex');
+            mainCameraArea.classList.remove('hidden');
             shootCountEl.innerText = '0';
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Hiện lại overlay khung
+            if (selectedFrameSrc) {
+                document.getElementById('liveFrameOverlay').src = selectedFrameSrc;
+                document.getElementById('liveFrameOverlay').classList.remove('hidden');
+            }
         }
 
         function downloadImage() {
@@ -338,7 +429,13 @@
             link.click();
         }
 
+        // Khởi động
         initCamera();
+        // Set mặc định khung đầu tiên nếu có
+        if(selectedFrameSrc) {
+            document.getElementById('liveFrameOverlay').src = selectedFrameSrc;
+            document.getElementById('liveFrameOverlay').classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
