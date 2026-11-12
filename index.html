@@ -8,11 +8,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
         .logo-font { font-family: 'Dancing Script', cursive; }
-        .filter-normal { filter: none; }
-        .filter-bw { filter: grayscale(100%); }
-        .filter-sepia { filter: sepia(80%); }
-        .filter-soft { filter: blur(1px) brightness(1.1) contrast(0.9); }
-        .filter-retro { filter: contrast(1.2) saturate(1.2) sepia(0.3); }
         ::-webkit-scrollbar { display: none; }
 
         /* Container chứa camera: Tỷ lệ ngang 4:3 */
@@ -33,6 +28,8 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            /* Mặc định lật camera trước */
+            transform: scaleX(-1);
         }
     </style>
 </head>
@@ -67,7 +64,7 @@
 
     <!-- Vùng Camera & Các Nút Điều Khiển Chụp -->
     <div id="mainCameraArea" class="flex flex-col items-center w-full">
-        <!-- Camera View (Không còn khung overlay) -->
+        <!-- Camera View -->
         <div class="px-4 flex justify-center w-full relative">
             <div class="camera-container transition-all duration-300">
                 <video id="camera" autoplay playsinline></video>
@@ -92,50 +89,77 @@
 
         <!-- Capture Controls -->
         <div class="flex justify-center items-center gap-6 mt-6 w-full max-w-sm mx-auto">
-            <button class="flex flex-col items-center group active:scale-95 transition">
+            <!-- Chụp tay -->
+            <button onclick="captureManual()" class="flex flex-col items-center group active:scale-95 transition">
                 <div class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center shadow-inner text-pink-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
                 </div>
                 <span class="text-[10px] text-pink-400 font-medium mt-1">Chụp tay</span>
             </button>
 
+            <!-- Chụp Tự Động -->
             <button id="captureBtn" onclick="startAutoCapture()" class="flex flex-col items-center group active:scale-95 transition">
                 <div class="w-20 h-20 bg-pink-400 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(244,114,182,0.6)] text-white border-4 border-white relative">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
                     <span class="absolute bottom-2 text-[9px] font-bold tracking-wider">AUTO</span>
                 </div>
             </button>
 
+            <!-- Chụp lại (Reset) -->
             <button onclick="resetApp()" class="flex flex-col items-center group active:scale-95 transition">
                 <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow text-green-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </div>
-                <span class="text-[10px] text-green-500 font-medium mt-1">Chụp lại</span>
-            </button>
-        </div>
-
-        <div class="flex justify-center mt-4">
-            <button class="flex items-center gap-2 bg-blue-50 text-blue-500 px-4 py-1.5 rounded-full text-xs shadow-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                Tải ảnh lên
+                <span class="text-[10px] text-green-500 font-medium mt-1">Làm mới</span>
             </button>
         </div>
     </div> <!-- End mainCameraArea -->
 
-    <!-- Bộ Lọc Màu -->
-    <div class="mt-6 px-4 mb-6">
-        <h3 class="text-pink-500 font-bold mb-3 text-sm">Bộ lọc màu</h3>
-        <div class="flex gap-3 overflow-x-auto pb-2 snap-x">
-            <button onclick="setFilter('filter-normal')" class="snap-start px-5 py-2 bg-pink-200 rounded-full text-pink-600 text-xs font-bold shadow-sm whitespace-nowrap filter-btn">Bình Thường</button>
-            <button onclick="setFilter('filter-retro')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Mono (Retro)</button>
-            <button onclick="setFilter('filter-bw')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Đen Trắng</button>
-            <button onclick="setFilter('filter-soft')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Mềm Mại</button>
-            <button onclick="setFilter('filter-sepia')" class="snap-start px-5 py-2 bg-white rounded-full text-gray-600 text-xs font-medium shadow-sm whitespace-nowrap border border-gray-100 filter-btn">Dazz Classic</button>
+    <!-- BẢNG LÀM ĐẸP (Beauty Sliders) -->
+    <div class="mt-8 px-4 mb-6 w-full max-w-sm mx-auto" id="beautyPanel">
+        <h3 class="text-pink-500 font-bold mb-3 text-sm flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" /></svg>
+            Làm đẹp Camera
+        </h3>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-pink-100 space-y-4">
+            
+            <!-- Trắng da -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-600 font-medium w-24">Làm trắng da</span>
+                <input type="range" id="slider-whitening" min="100" max="150" value="100" class="w-full accent-pink-400" oninput="updateBeauty()">
+            </div>
+            
+            <!-- Mịn da -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-600 font-medium w-24">Làm mịn da</span>
+                <input type="range" id="slider-smoothing" min="0" max="4" value="0" step="0.5" class="w-full accent-pink-400" oninput="updateBeauty()">
+            </div>
+
+            <hr class="border-pink-50 border-t-2">
+            <p class="text-[10px] text-gray-400 italic mb-1">* Các tính năng hình thể (Cần nâng cấp AI để hoạt động):</p>
+            
+            <!-- Mắt to -->
+            <div class="flex items-center gap-3 opacity-60">
+                <span class="text-xs text-gray-600 font-medium w-24">Mắt to hơn</span>
+                <input type="range" min="0" max="100" value="0" class="w-full accent-pink-400" oninput="alertAIDisabled()">
+            </div>
+            
+            <!-- Gọt cằm -->
+            <div class="flex items-center gap-3 opacity-60">
+                <span class="text-xs text-gray-600 font-medium w-24">Gọt cằm nhỏ</span>
+                <input type="range" min="0" max="100" value="0" class="w-full accent-pink-400" oninput="alertAIDisabled()">
+            </div>
+
+            <!-- Mặt ngắn -->
+            <div class="flex items-center gap-3 opacity-60">
+                <span class="text-xs text-gray-600 font-medium w-24">Kéo mặt ngắn</span>
+                <input type="range" min="0" max="100" value="0" class="w-full accent-pink-400" oninput="alertAIDisabled()">
+            </div>
         </div>
     </div>
 
-    <!-- Vùng Kết quả & Download (Bên dưới bộ lọc) -->
-    <div id="resultArea" class="px-4 flex-col items-center mb-10 hidden">
+    <!-- Vùng Kết quả & Download -->
+    <div id="resultArea" class="px-4 flex-col items-center mb-10 hidden w-full">
         <!-- Ảnh kết quả -->
         <canvas id="resultCanvas" class="w-full max-w-[360px] shadow-2xl rounded-md bg-white"></canvas>
         
@@ -143,7 +167,7 @@
         <button onclick="resetApp()" class="mt-4 text-gray-500 font-medium underline active:text-gray-700">Chụp lại ảnh khác</button>
     </div>
 
-    <!-- Modal Chọn Khung Hình Ảnh -->
+    <!-- Modal Chọn Khung -->
     <div id="frameModal" class="fixed inset-0 bg-black/60 z-50 hidden flex-col items-center justify-end">
         <div class="bg-white w-full max-w-md h-[85vh] rounded-t-3xl p-4 flex flex-col transform transition-transform duration-300">
             <div class="flex justify-between items-start mb-2">
@@ -154,7 +178,7 @@
             </div>
             
             <div class="w-full flex-1 mb-4 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
-                <img id="modalPreviewImg" src="khung-thien-nga.png" class="h-full object-contain drop-shadow-md" alt="Preview">
+                <img id="modalPreviewImg" src="1.png" class="h-full object-contain drop-shadow-md" alt="Preview">
             </div>
 
             <div class="flex gap-4 mb-4">
@@ -175,11 +199,14 @@
         const shootCountEl = document.getElementById('shootCount');
         const mainCameraArea = document.getElementById('mainCameraArea');
         const resultArea = document.getElementById('resultArea');
+        const beautyPanel = document.getElementById('beautyPanel');
         
-        let currentFilter = 'filter-normal';
         let stream;
         let useFrontCamera = true;
+        let rawImages = []; // Lưu ảnh sau mỗi lần chụp
+        let isProcessing = false; // Ngăn bấm linh tinh khi đang xử lý
         
+        // Tên file khung được cập nhật thành 1.png
         const developerFrames = [
             { id: 'f1', name: 'Thiên Nga Hồng', src: '1.png' }
         ];
@@ -194,27 +221,38 @@
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: useFrontCamera ? 'user' : 'environment',
-                        aspectRatio: 4/3 // Yêu cầu camera ngang 4:3
+                        aspectRatio: 4/3
                     },
                     audio: false
                 });
                 video.srcObject = stream;
-            } catch (err) { alert('Vui lòng cấp quyền camera!'); }
+            } catch (err) { alert('Vui lòng cấp quyền camera trong cài đặt trình duyệt!'); }
         }
 
-        function switchCamera() { useFrontCamera = !useFrontCamera; initCamera(); }
-
-        function setFilter(filterClass) {
-            video.className = filterClass;
-            currentFilter = filterClass;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('bg-pink-200', 'text-pink-600', 'font-bold');
-                btn.classList.add('bg-white', 'text-gray-600', 'font-medium');
-            });
-            event.target.classList.remove('bg-white', 'text-gray-600', 'font-medium');
-            event.target.classList.add('bg-pink-200', 'text-pink-600', 'font-bold');
+        // Lật camera trước/sau
+        function switchCamera() { 
+            useFrontCamera = !useFrontCamera; 
+            video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+            initCamera(); 
         }
 
+        // --- HỆ THỐNG LÀM ĐẸP (BEAUTY) ---
+        function updateBeauty() {
+            const whitening = document.getElementById('slider-whitening').value;
+            const smoothing = document.getElementById('slider-smoothing').value;
+            // Áp dụng CSS filter lên video trực tiếp
+            video.style.filter = `brightness(${whitening}%) blur(${smoothing}px)`;
+        }
+
+        function alertAIDisabled() {
+            // Thông báo nhỏ khi người dùng kéo thanh trượt hình thể
+            const val = event.target.value;
+            if(val > 10) {
+                console.log("Face Morphing requires AI library!");
+            }
+        }
+
+        // --- HỆ THỐNG KHUNG ---
         function renderFramesInModal() {
             const grid = document.getElementById('frameGrid');
             grid.innerHTML = '';
@@ -228,7 +266,7 @@
                     pendingFrameSrc = frame.src;
                     renderFramesInModal(); 
                 };
-                div.innerHTML = `<img src="${frame.src}" class="w-full aspect-[1/3] object-cover bg-gray-100 rounded" alt="${frame.name}">`;
+                div.innerHTML = `<img src="${frame.src}" onerror="this.src=''" class="w-full aspect-[1/3] object-cover bg-gray-100 rounded" alt="${frame.name}">`;
                 grid.appendChild(div);
             });
         }
@@ -247,16 +285,91 @@
 
         function confirmFrame() {
             selectedFrameSrc = pendingFrameSrc;
-            // Khung không còn đè lên camera nữa, chỉ lưu biến để ghép lúc chụp
             closeFrameModal();
         }
 
+        // --- HỆ THỐNG CHỤP ẢNH ---
+        // 1. Chụp 1 phát ăn luôn (dùng chung cho Auto và Tay)
+        function takeSnapshot() {
+            // Hiệu ứng nháy Flash
+            const flash = document.createElement('div');
+            flash.className = 'fixed inset-0 bg-white z-[60] opacity-100 transition-opacity duration-150';
+            document.body.appendChild(flash);
+            setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 150); }, 50);
+
+            // Tạo canvas tạm thời để lưu ảnh
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            // Áp dụng thông số làm đẹp vào ảnh tĩnh
+            const whitening = document.getElementById('slider-whitening').value;
+            const smoothing = document.getElementById('slider-smoothing').value;
+            tCtx.filter = `brightness(${whitening}%) blur(${smoothing}px)`;
+            
+            if (useFrontCamera) {
+                tCtx.translate(tempCanvas.width, 0);
+                tCtx.scale(-1, 1);
+            }
+            
+            tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            rawImages.push(tempCanvas);
+            shootCountEl.innerText = rawImages.length.toString();
+        }
+
+        // 2. Chụp bằng tay
+        async function captureManual() {
+            if (isProcessing || rawImages.length >= 4) return;
+            
+            // Đợi 1 giây để người dùng tạo dáng sau khi bấm bấm nút
+            await countdownTimer(1);
+            takeSnapshot();
+
+            if (rawImages.length === 4) {
+                await processFinalImage();
+            }
+        }
+
+        // 3. Chụp tự động (4 tấm liên tục)
         async function startAutoCapture() {
+            if (isProcessing) return;
+            isProcessing = true;
+            rawImages = [];
+            shootCountEl.innerText = '0';
+            
             const btn = document.getElementById('captureBtn');
             const countdownVal = parseInt(document.getElementById('countdownSelect').value);
-            btn.disabled = true; btn.classList.add('opacity-50');
-            shootCountEl.innerText = '0';
-            const rawImages = [];
+            btn.classList.add('opacity-50');
+
+            for (let i = 0; i < 4; i++) {
+                await countdownTimer(countdownVal);
+                takeSnapshot();
+            }
+            
+            await processFinalImage();
+            btn.classList.remove('opacity-50');
+            isProcessing = false;
+        }
+
+        // Đếm ngược màn hình
+        function countdownTimer(seconds) {
+            return new Promise(resolve => {
+                const el = document.getElementById('countdown');
+                el.classList.remove('hidden');
+                let count = seconds;
+                el.innerText = count;
+                const intv = setInterval(() => {
+                    count--;
+                    if (count > 0) { el.innerText = count; } 
+                    else { clearInterval(intv); el.classList.add('hidden'); resolve(); }
+                }, 1000);
+            });
+        }
+
+        // GIAI ĐOẠN GHÉP ẢNH VÀO KHUNG VÀ RENDER
+        async function processFinalImage() {
+            isProcessing = true;
             
             // Kích thước chuẩn KHUNG (1200x3600)
             const CANVAS_WIDTH = 1200;
@@ -267,46 +380,17 @@
             ctx.fillStyle = '#ffffff'; 
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-            for (let i = 0; i < 4; i++) {
-                await countdownTimer(countdownVal);
-                
-                const flash = document.createElement('div');
-                flash.className = 'fixed inset-0 bg-white z-[60] opacity-100 transition-opacity duration-150';
-                document.body.appendChild(flash);
-                setTimeout(() => { flash.style.opacity = '0'; setTimeout(() => flash.remove(), 150); }, 50);
-
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = video.videoWidth;
-                tempCanvas.height = video.videoHeight;
-                const tCtx = tempCanvas.getContext('2d');
-                
-                if(currentFilter === 'filter-bw') tCtx.filter = 'grayscale(100%)';
-                if(currentFilter === 'filter-retro') tCtx.filter = 'contrast(1.2) saturate(1.2) sepia(0.3)';
-                if(currentFilter === 'filter-soft') tCtx.filter = 'blur(1px) brightness(1.1) contrast(0.9)';
-                if(currentFilter === 'filter-sepia') tCtx.filter = 'sepia(80%)';
-                
-                if (useFrontCamera) {
-                    tCtx.translate(tempCanvas.width, 0);
-                    tCtx.scale(-1, 1);
-                }
-                
-                tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-                rawImages.push(tempCanvas);
-                shootCountEl.innerText = (i + 1).toString();
-            }
-
-            // GIAI ĐOẠN GHÉP ẢNH
             const holeW = 960;
             const holeH = 640;
             const marginX = 120;
             const marginTop = 120; 
             const gapY = 100; 
 
+            // Vẽ 4 ảnh camera vào đúng toạ độ lỗ thủng
             rawImages.forEach((img, idx) => {
                 const drawX = marginX;
                 const drawY = marginTop + idx * (holeH + gapY); 
 
-                // Xử lý cắt cúp ảnh 4:3 từ camera cho vừa khít lỗ 3:2 (960x640)
                 const rawRatio = img.width / img.height;
                 const holeRatio = holeW / holeH;
                 
@@ -323,7 +407,7 @@
                 ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, drawX, drawY, holeW, holeH);
             });
 
-            // VẼ ĐÈ KHUNG LÊN TRÊN
+            // Vẽ đè Khung lên trên cùng
             if (selectedFrameSrc) {
                 await new Promise(resolve => {
                     const frameImg = new Image();
@@ -331,42 +415,41 @@
                         ctx.drawImage(frameImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
                         resolve();
                     };
+                    frameImg.onerror = () => {
+                        console.warn("Không tìm thấy ảnh khung:", selectedFrameSrc, "- Trả về ảnh nền trắng");
+                        resolve(); // BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ WEB KHÔNG BỊ TREO
+                    };
                     frameImg.src = selectedFrameSrc;
                 });
             }
 
-            // Hiển thị kết quả dưới bộ lọc
+            // Chuyển giao diện sang kết quả
             mainCameraArea.classList.add('hidden'); 
+            beautyPanel.classList.add('hidden');
+            
             resultArea.classList.remove('hidden'); 
             resultArea.classList.add('flex');
             
-            btn.classList.remove('opacity-50'); btn.disabled = false;
-            
             resultArea.scrollIntoView({ behavior: 'smooth' });
+            isProcessing = false;
         }
 
-        function countdownTimer(seconds) {
-            return new Promise(resolve => {
-                const el = document.getElementById('countdown');
-                el.classList.remove('hidden');
-                let count = seconds;
-                el.innerText = count;
-                const intv = setInterval(() => {
-                    count--;
-                    if (count > 0) { el.innerText = count; } 
-                    else { clearInterval(intv); el.classList.add('hidden'); resolve(); }
-                }, 1000);
-            });
-        }
-
+        // Xoá trắng làm lại từ đầu
         function resetApp() {
+            rawImages = [];
+            shootCountEl.innerText = '0';
+            isProcessing = false;
+            
             resultArea.classList.add('hidden');
             resultArea.classList.remove('flex');
+            
             mainCameraArea.classList.remove('hidden');
-            shootCountEl.innerText = '0';
+            beautyPanel.classList.remove('hidden');
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Tải xuống
         function downloadImage() {
             const link = document.createElement('a');
             link.download = `HQ_Photo_${new Date().getTime()}.png`;
@@ -374,7 +457,9 @@
             link.click();
         }
 
+        // Khởi động
         initCamera();
+        updateBeauty(); // Áp dụng độ sáng mặc định
     </script>
 </body>
 </html>
