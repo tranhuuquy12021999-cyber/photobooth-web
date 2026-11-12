@@ -15,13 +15,12 @@
         .filter-retro { filter: contrast(1.2) saturate(1.2) sepia(0.3); }
         ::-webkit-scrollbar { display: none; }
 
-        /* Container chứa camera để dễ dàng phủ khung lên trên */
+        /* Container chứa camera: Tỷ lệ ngang 4:3 */
         .camera-container {
             position: relative;
             width: 100%;
-            max-width: 360px;
-            /* Đảm bảo tỷ lệ 3:4 cho container */
-            aspect-ratio: 3 / 4; 
+            max-width: 400px;
+            aspect-ratio: 4 / 3; 
             margin: 0 auto;
             border-radius: 12px;
             overflow: hidden;
@@ -30,23 +29,10 @@
             border: 4px solid white;
         }
 
-        /* Video lấp đầy container, cắt cúp nếu cần để giữ tỷ lệ */
         #camera {
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-
-        /* Khung overlay phủ vừa vặn lên container */
-        #liveFrameOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Hoặc 'fill' tùy thuộc vào việc bạn muốn khung hiển thị thế nào trên preview */
-            pointer-events: none;
-            z-index: 10;
         }
     </style>
 </head>
@@ -81,11 +67,10 @@
 
     <!-- Vùng Camera & Các Nút Điều Khiển Chụp -->
     <div id="mainCameraArea" class="flex flex-col items-center w-full">
-        <!-- Camera View -->
+        <!-- Camera View (Không còn khung overlay) -->
         <div class="px-4 flex justify-center w-full relative">
             <div class="camera-container transition-all duration-300">
                 <video id="camera" autoplay playsinline></video>
-                <img id="liveFrameOverlay" src="" class="hidden opacity-80" alt="Khung trợ chụp">
 
                 <!-- Nút Flash & Switch -->
                 <button class="absolute top-3 left-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-700 shadow z-20">
@@ -149,9 +134,11 @@
         </div>
     </div>
 
-    <!-- Vùng Kết quả & Download (Nằm dưới bộ lọc) -->
+    <!-- Vùng Kết quả & Download (Bên dưới bộ lọc) -->
     <div id="resultArea" class="px-4 flex-col items-center mb-10 hidden">
+        <!-- Ảnh kết quả -->
         <canvas id="resultCanvas" class="w-full max-w-[360px] shadow-2xl rounded-md bg-white"></canvas>
+        
         <button onclick="downloadImage()" class="mt-6 px-10 py-3 bg-pink-500 text-white rounded-full font-bold shadow-lg shadow-pink-300 active:scale-95 transition text-lg w-full max-w-[360px]">⬇ Tải Ảnh Về Máy</button>
         <button onclick="resetApp()" class="mt-4 text-gray-500 font-medium underline active:text-gray-700">Chụp lại ảnh khác</button>
     </div>
@@ -166,17 +153,14 @@
                 </button>
             </div>
             
-            <!-- Khu vực xem trước lớn ở trên -->
             <div class="w-full flex-1 mb-4 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
                 <img id="modalPreviewImg" src="khung-thien-nga.png" class="h-full object-contain drop-shadow-md" alt="Preview">
             </div>
 
-            <!-- Nút xác nhận & Chọn lại -->
             <div class="flex gap-4 mb-4">
                 <button onclick="confirmFrame()" class="flex-1 bg-pink-500 text-white font-bold py-3 rounded-xl shadow-md active:bg-pink-600 transition">OK, Chọn khung này</button>
             </div>
 
-            <!-- Danh sách khung nhỏ ở dưới -->
             <p class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Các khung khác:</p>
             <div class="grid grid-cols-4 gap-2 overflow-y-auto pb-4" id="frameGrid">
                 <!-- Javascript sẽ tạo danh sách khung tại đây -->
@@ -196,23 +180,21 @@
         let stream;
         let useFrontCamera = true;
         
-        // CHỈ CÓ KHUNG CỦA DEVELOPER (Loại bỏ Không Khung và Basic)
         const developerFrames = [
             { id: 'f1', name: 'Thiên Nga Hồng', src: '1.png' }
-            // Thêm khung khác bằng cách copy dòng trên
         ];
         
         let selectedFrameSrc = developerFrames.length > 0 ? developerFrames[0].src : ''; 
-        let pendingFrameSrc = selectedFrameSrc; // Dùng lưu tạm khi đang chọn trong modal
+        let pendingFrameSrc = selectedFrameSrc; 
 
-        // Khởi tạo Camera (Tỷ lệ 3:4)
+        // Khởi tạo Camera (Tỷ lệ 4:3)
         async function initCamera() {
             if (stream) { stream.getTracks().forEach(track => track.stop()); }
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: useFrontCamera ? 'user' : 'environment',
-                        aspectRatio: 3/4 // Yêu cầu camera ưu tiên tỷ lệ dọc 3:4
+                        aspectRatio: 4/3 // Yêu cầu camera ngang 4:3
                     },
                     audio: false
                 });
@@ -223,10 +205,8 @@
         function switchCamera() { useFrontCamera = !useFrontCamera; initCamera(); }
 
         function setFilter(filterClass) {
-            // Áp dụng filter lên video
             video.className = filterClass;
             currentFilter = filterClass;
-            // Cập nhật UI nút
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('bg-pink-200', 'text-pink-600', 'font-bold');
                 btn.classList.add('bg-white', 'text-gray-600', 'font-medium');
@@ -235,12 +215,9 @@
             event.target.classList.add('bg-pink-200', 'text-pink-600', 'font-bold');
         }
 
-        // --- Logic Chọn Khung Ảnh (Cập nhật) ---
         function renderFramesInModal() {
             const grid = document.getElementById('frameGrid');
             grid.innerHTML = '';
-            
-            // Cập nhật ảnh Preview lớn
             document.getElementById('modalPreviewImg').src = pendingFrameSrc || '';
 
             developerFrames.forEach(frame => {
@@ -249,18 +226,15 @@
                 div.className = `cursor-pointer p-1 rounded-lg ${isSelected ? 'bg-pink-100 border-2 border-pink-400' : 'border border-gray-200'}`;
                 div.onclick = () => {
                     pendingFrameSrc = frame.src;
-                    renderFramesInModal(); // Render lại để cập nhật viền chọn & Preview lớn
+                    renderFramesInModal(); 
                 };
-                
-                div.innerHTML = `
-                    <img src="${frame.src}" class="w-full aspect-[1/3] object-cover bg-gray-100 rounded" alt="${frame.name}">
-                `;
+                div.innerHTML = `<img src="${frame.src}" class="w-full aspect-[1/3] object-cover bg-gray-100 rounded" alt="${frame.name}">`;
                 grid.appendChild(div);
             });
         }
 
         function openFrameModal() {
-            pendingFrameSrc = selectedFrameSrc; // Lấy khung hiện tại làm nháp
+            pendingFrameSrc = selectedFrameSrc;
             renderFramesInModal();
             document.getElementById('frameModal').classList.remove('hidden');
             document.getElementById('frameModal').classList.add('flex');
@@ -273,17 +247,10 @@
 
         function confirmFrame() {
             selectedFrameSrc = pendingFrameSrc;
-            const overlay = document.getElementById('liveFrameOverlay');
-            if(selectedFrameSrc) {
-                overlay.src = selectedFrameSrc;
-                overlay.classList.remove('hidden');
-            } else {
-                overlay.classList.add('hidden');
-            }
+            // Khung không còn đè lên camera nữa, chỉ lưu biến để ghép lúc chụp
             closeFrameModal();
         }
 
-        // --- Logic Chụp Tự Động (Căn chỉnh Pixel) ---
         async function startAutoCapture() {
             const btn = document.getElementById('captureBtn');
             const countdownVal = parseInt(document.getElementById('countdownSelect').value);
@@ -297,14 +264,12 @@
             canvas.width = CANVAS_WIDTH;
             canvas.height = CANVAS_HEIGHT; 
 
-            // Nền trắng
             ctx.fillStyle = '#ffffff'; 
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
             for (let i = 0; i < 4; i++) {
                 await countdownTimer(countdownVal);
                 
-                // Flash
                 const flash = document.createElement('div');
                 flash.className = 'fixed inset-0 bg-white z-[60] opacity-100 transition-opacity duration-150';
                 document.body.appendChild(flash);
@@ -325,45 +290,32 @@
                     tCtx.scale(-1, 1);
                 }
                 
-                // Vẽ ảnh raw từ video
                 tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
                 rawImages.push(tempCanvas);
                 shootCountEl.innerText = (i + 1).toString();
             }
 
             // GIAI ĐOẠN GHÉP ẢNH
-            // Thông số cấu hình từ yêu cầu:
             const holeW = 960;
-            const holeH = 640; // Lỗ thủng nằm ngang, tức ảnh phải ngang? 
-            // SỬA LẠI: Nếu lề trái phải là 120px trên khung 1200px: 1200 - 120*2 = 960px.
-            // Vậy lỗ thủng rộng 960px, cao 640px. (Tỷ lệ ngang 3:2, KHÁC với tỷ lệ dọc 3:4 của camera).
-            // Do đó ta cần vẽ ảnh camera (dọc) tràn đều (cover) vào lỗ thủng (ngang)
+            const holeH = 640;
             const marginX = 120;
-            const marginTop = 120; // Lề trên
-            const gapY = 100; // Khoảng cách giữa các ảnh
+            const marginTop = 120; 
+            const gapY = 100; 
 
             rawImages.forEach((img, idx) => {
                 const drawX = marginX;
-                // Tính toạ độ Y của từng lỗ thủng
-                // Ảnh 0: 120
-                // Ảnh 1: 120 + 640 + 100 = 860
-                // Ảnh 2: 860 + 640 + 100 = 1600
-                // Ảnh 3: 1600 + 640 + 100 = 2340
                 const drawY = marginTop + idx * (holeH + gapY); 
 
-                // Vẽ ảnh cover vào khung (cắt bớt phần thừa để khớp lỗ thủng)
-                // Ảnh raw (3:4) cần vẽ vào lỗ (3:2), ta sẽ crop giữa theo chiều dọc
+                // Xử lý cắt cúp ảnh 4:3 từ camera cho vừa khít lỗ 3:2 (960x640)
                 const rawRatio = img.width / img.height;
                 const holeRatio = holeW / holeH;
                 
                 let sourceX = 0, sourceY = 0, sourceW = img.width, sourceH = img.height;
                 
                 if (rawRatio < holeRatio) {
-                    // Ảnh hẹp hơn lỗ (Ảnh dọc, lỗ ngang) -> Cắt trên dưới
                     sourceH = img.width / holeRatio;
                     sourceY = (img.height - sourceH) / 2;
                 } else {
-                    // Ảnh rộng hơn lỗ -> Cắt 2 bên
                     sourceW = img.height * holeRatio;
                     sourceX = (img.width - sourceW) / 2;
                 }
@@ -384,13 +336,12 @@
             }
 
             // Hiển thị kết quả dưới bộ lọc
-            mainCameraArea.classList.add('hidden'); // Ẩn vùng chụp
-            resultArea.classList.remove('hidden'); // Hiện vùng kết quả
+            mainCameraArea.classList.add('hidden'); 
+            resultArea.classList.remove('hidden'); 
             resultArea.classList.add('flex');
             
             btn.classList.remove('opacity-50'); btn.disabled = false;
             
-            // Cuộn mượt mà xuống xem kết quả
             resultArea.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -414,12 +365,6 @@
             mainCameraArea.classList.remove('hidden');
             shootCountEl.innerText = '0';
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // Hiện lại overlay khung
-            if (selectedFrameSrc) {
-                document.getElementById('liveFrameOverlay').src = selectedFrameSrc;
-                document.getElementById('liveFrameOverlay').classList.remove('hidden');
-            }
         }
 
         function downloadImage() {
@@ -429,13 +374,7 @@
             link.click();
         }
 
-        // Khởi động
         initCamera();
-        // Set mặc định khung đầu tiên nếu có
-        if(selectedFrameSrc) {
-            document.getElementById('liveFrameOverlay').src = selectedFrameSrc;
-            document.getElementById('liveFrameOverlay').classList.remove('hidden');
-        }
     </script>
 </body>
 </html>
