@@ -4,7 +4,7 @@ ALL_FRAMES.push({
     id: 'f_cucxanh', 
     type: 3, 
     name: 'Vải Cúc Xanh', 
-    src: 'X1.png', 
+    src: 'style3/X1.png', 
     layout: {
         canvasW: 1200, canvasH: 3600,
         photos: [
