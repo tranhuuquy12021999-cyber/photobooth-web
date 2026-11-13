@@ -30,7 +30,6 @@
             transform: scaleX(-1);
         }
 
-        /* Định nghĩa CSS cho các bộ lọc màu (Đã tích hợp làm mịn/trắng da nhẹ) */
         .filter-normal { filter: brightness(1.05) blur(0.5px); }
         .filter-wedding { filter: brightness(1.15) contrast(0.95) saturate(1.1) sepia(0.1) hue-rotate(-10deg) blur(0.5px); }
         .filter-korean { filter: brightness(1.12) contrast(0.9) saturate(0.9) blur(1px); }
@@ -81,7 +80,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
                 </button>
                 <button onclick="switchCamera()" class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow active:scale-90 transition z-20">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
                 </button>
 
                 <!-- Bộ đếm ảnh -->
@@ -96,7 +95,6 @@
 
         <!-- Capture Controls -->
         <div class="flex justify-center items-center gap-6 mt-6 w-full max-w-sm mx-auto">
-            <!-- Chụp tay -->
             <button onclick="captureManual()" class="flex flex-col items-center group active:scale-95 transition">
                 <div class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center shadow-inner text-pink-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
@@ -104,7 +102,6 @@
                 <span class="text-[10px] text-pink-400 font-medium mt-1">Chụp tay</span>
             </button>
 
-            <!-- Chụp Tự Động -->
             <button id="captureBtn" onclick="startAutoCapture()" class="flex flex-col items-center group active:scale-95 transition">
                 <div class="w-20 h-20 bg-pink-400 rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(244,114,182,0.6)] text-white border-4 border-white relative">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
@@ -112,7 +109,6 @@
                 </div>
             </button>
 
-            <!-- Chụp lại (Reset) -->
             <button onclick="resetApp()" class="flex flex-col items-center group active:scale-95 transition">
                 <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow text-green-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -120,66 +116,52 @@
                 <span class="text-[10px] text-green-500 font-medium mt-1">Làm mới</span>
             </button>
         </div>
-    </div> <!-- End mainCameraArea -->
+    </div>
 
-    <!-- BỘ LỌC MÀU (THAY THẾ BẢNG LÀM ĐẸP) -->
+    <!-- BỘ LỌC MÀU -->
     <div class="mt-8 px-4 mb-6 w-full mx-auto" id="filterPanel">
         <h3 class="text-pink-500 font-bold mb-3 text-sm flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
-            Bộ lọc & Làm đẹp (Mới)
+            Bộ lọc & Làm đẹp
         </h3>
         
-        <!-- Nơi chứa các icon bộ lọc có cuộn ngang -->
         <div class="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth">
-            <!-- 1. Mặc định -->
             <button onclick="applyColorFilter('filter-normal', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-md ring-4 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-normal" alt="Normal">
                 </div>
                 <span class="text-[10px] font-bold text-pink-500">Mặc định</span>
             </button>
-
-            <!-- 2. Tone Trắng -->
             <button onclick="applyColorFilter('filter-wedding', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group opacity-70">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-sm ring-0 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-wedding" alt="Wedding">
                 </div>
                 <span class="text-[10px] font-medium text-gray-500">Tone trắng</span>
             </button>
-
-            <!-- 3. Hàn Quốc -->
             <button onclick="applyColorFilter('filter-korean', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group opacity-70">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-sm ring-0 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-korean" alt="Korean">
                 </div>
                 <span class="text-[10px] font-medium text-gray-500">Hàn Quốc</span>
             </button>
-
-            <!-- 4. Hồng Kông -->
             <button onclick="applyColorFilter('filter-hk', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group opacity-70">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-sm ring-0 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-hk" alt="HK">
                 </div>
                 <span class="text-[10px] font-medium text-gray-500">Hồng Kông</span>
             </button>
-
-            <!-- 5. Fujifilm -->
             <button onclick="applyColorFilter('filter-fuji', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group opacity-70">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-sm ring-0 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-fuji" alt="Fuji">
                 </div>
                 <span class="text-[10px] font-medium text-gray-500">Fujifilm</span>
             </button>
-
-            <!-- 6. Cổ điển -->
             <button onclick="applyColorFilter('filter-classic', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group opacity-70">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-sm ring-0 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-classic" alt="Classic">
                 </div>
                 <span class="text-[10px] font-medium text-gray-500">Cổ điển</span>
             </button>
-
-            <!-- 7. Sky -->
             <button onclick="applyColorFilter('filter-sky', this)" class="filter-btn flex flex-col items-center gap-2 snap-start flex-shrink-0 group opacity-70">
                 <div class="w-16 h-16 rounded-full overflow-hidden shadow-sm ring-0 ring-pink-400 p-0 transition-all duration-200">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-full h-full object-cover filter-sky" alt="Sky">
@@ -196,7 +178,7 @@
         <button onclick="resetApp()" class="mt-4 text-gray-500 font-medium underline active:text-gray-700">Chụp lại ảnh khác</button>
     </div>
 
-    <!-- Modal 1: Giao diện Chọn Khung (Lưới) -->
+    <!-- Modal 1: Giao diện Chọn Khung -->
     <div id="frameSelectionModal" class="fixed inset-0 bg-white z-50 hidden flex-col transition-transform duration-300">
         <div class="p-4 border-b flex items-center gap-3">
             <button onclick="closeFrameSelectionModal()" class="text-gray-500 hover:text-gray-700">
@@ -210,7 +192,7 @@
         <div class="grid grid-cols-3 gap-4 p-4 overflow-y-auto pb-10 flex-1" id="frameSelectionGrid"></div>
     </div>
 
-    <!-- Modal 2: Giao diện Xem Trước & Áp Dụng Khung -->
+    <!-- Modal 2: Giao diện Xem Trước -->
     <div id="framePreviewModal" class="fixed inset-0 bg-black/60 z-[60] hidden flex-col items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl relative flex flex-col">
             <button onclick="closeFramePreviewModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 bg-white rounded-full p-1 shadow z-10">
@@ -239,20 +221,17 @@
         let rawImages = [];
         let isProcessing = false;
         
-        // Mặc định CSS class của bộ lọc hiện tại
         let activeFilterClass = 'filter-normal';
-        // Chuỗi CSS filter thô để vẽ lên canvas
         let activeFilterCSSString = 'brightness(1.05) blur(0.5px)';
         
+        // Đã thay thế toàn bộ bằng khung TEAM Kỹ Thuật
         const developerFrames = [
-            { id: 'f1', name: 'Thiên Nga Hồng', src: '1.png' },
-            { id: 'f2', name: 'Tình Yêu', src: '2.png' }
+            { id: 'f1', name: 'TEAM Kỹ Thuật', src: 'KT.png' }
         ];
         
         let selectedFrameSrc = developerFrames.length > 0 ? developerFrames[0].src : ''; 
         let currentViewingFrameSrc = ''; 
 
-        // 1. Khởi tạo Camera
         async function initCamera() {
             if (stream) { stream.getTracks().forEach(track => track.stop()); }
             try {
@@ -270,21 +249,16 @@
             initCamera(); 
         }
 
-        // 2. Logic Chọn Bộ Lọc Màu
         function applyColorFilter(filterClass, btnElement) {
-            // Thay đổi class cho video
             video.className = filterClass;
             activeFilterClass = filterClass;
             
-            // Lấy chuỗi filter thực tế từ CSS để áp dụng cho canvas khi chụp
-            // Tạo thẻ div ẩn để lấy style chuẩn
             const tempDiv = document.createElement('div');
             tempDiv.className = filterClass;
             document.body.appendChild(tempDiv);
             activeFilterCSSString = getComputedStyle(tempDiv).filter;
             document.body.removeChild(tempDiv);
 
-            // Cập nhật UI Nút bấm
             const allBtns = document.querySelectorAll('.filter-btn');
             allBtns.forEach(btn => {
                 btn.classList.add('opacity-70');
@@ -302,11 +276,9 @@
             btnElement.querySelector('span').classList.remove('text-gray-500', 'font-medium');
             btnElement.querySelector('span').classList.add('text-pink-500', 'font-bold');
             
-            // Cuộn tự động để hiển thị rõ nút được chọn
             btnElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
 
-        // 3. Hệ Thống Khung Modal
         function openFrameSelectionModal() {
             renderFrameSelectionGrid();
             document.getElementById('frameSelectionModal').classList.remove('hidden');
@@ -366,7 +338,6 @@
             closeFrameSelectionModal();
         }
 
-        // 4. Chụp Ảnh
         function takeSnapshot() {
             const flash = document.createElement('div');
             flash.className = 'fixed inset-0 bg-white z-[60] opacity-100 transition-opacity duration-150';
@@ -378,7 +349,6 @@
             tempCanvas.height = video.videoHeight;
             const tCtx = tempCanvas.getContext('2d');
             
-            // Gắn bộ lọc màu và làm đẹp vào ảnh trước khi chụp
             tCtx.filter = activeFilterCSSString;
             
             if (useFrontCamera) {
@@ -435,7 +405,6 @@
             });
         }
 
-        // 5. Render Ảnh Kết Quả
         async function processFinalImage() {
             isProcessing = true;
             
@@ -447,11 +416,12 @@
             ctx.fillStyle = '#ffffff'; 
             ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+            // KÍCH THƯỚC VÀ TỌA ĐỘ MỚI
             const holeW = 960;
-            const holeH = 640;
+            const holeH = 720;
             const marginX = 120;
-            const marginTop = 120; 
-            const gapY = 100; 
+            const marginTop = 100; 
+            const gapY = 80; 
 
             rawImages.forEach((img, idx) => {
                 const drawX = marginX;
