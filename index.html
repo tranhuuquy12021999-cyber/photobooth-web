@@ -3,34 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HQ-Photo - Trạm Chụp Ảnh</title>
+    <title>HQ-Photo - Trạm Chụp Ảnh Thanh Xuân</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-pink-50 min-h-screen font-sans flex flex-col items-center px-4 pt-10 pb-10">
-    <div class="w-20 h-20 bg-pink-200 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-pink-200">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
-    </div>
-    <h2 class="text-2xl font-bold text-pink-600 mb-4 text-center">Chào mừng đến <span class="logo-font text-3xl">HQ-Photo</span></h2>
-    <p class="text-gray-600 text-sm leading-relaxed mb-8 max-w-sm text-center">Mỗi bức ảnh là một mảnh ghép của thanh xuân.<br> Hãy chọn loại khung để bắt đầu nhé! ✨</p>
-    
-    <div class="flex flex-col gap-4 w-full max-w-sm">
-        <label class="flex items-center justify-between p-4 border-2 border-pink-100 bg-white rounded-2xl shadow-sm cursor-pointer has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
-            <span class="font-bold text-gray-700">Khung 3 Ảnh</span>
-            <input type="radio" name="photoType" value="3" class="w-5 h-5 accent-pink-500" checked>
-        </label>
-        <label class="flex items-center justify-between p-4 border-2 border-pink-100 bg-white rounded-2xl shadow-sm cursor-pointer has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
-            <span class="font-bold text-gray-700">Khung 4 Ảnh</span>
-            <input type="radio" name="photoType" value="4" class="w-5 h-5 accent-pink-500">
-        </label>
-    </div>
-    <button onclick="goToCamera()" class="w-full max-w-sm mt-8 bg-pink-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-pink-300 active:scale-95 transition">Tiếp tục</button>
+    <style>
+        /* Hiệu ứng chuyển màn hình mượt mà */
+        .step-section { display: none; animation: fadeIn 0.6s ease-out forwards; }
+        .step-section.active { display: flex; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
+        /* Hiệu ứng trái tim rơi */
+        .heart-particle {
+            position: absolute;
+            top: -10vh;
+            color: #f9a8d4; /* Màu hồng nhạt (pink-300) */
+            opacity: 0.7;
+            user-select: none;
+            pointer-events: none;
+            animation: fall linear forwards;
+            z-index: 0;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+            10% { opacity: 0.7; }
+            100% { transform: translateY(110vh) rotate(360deg) scale(0.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-pink-50 min-h-screen font-sans flex flex-col relative overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex justify-end items-center p-4 pb-2 z-10 relative">
+        <div class="text-right">
+            <h1 class="text-4xl text-pink-400 logo-font drop-shadow-sm">HQ-Photo</h1>
+            <p class="text-[10px] text-pink-400 font-bold uppercase tracking-wider">Capture Memories</p>
+        </div>
+    </div>
+
+    <!-- ==============================================
+         MÀN HÌNH 1: LỜI CHÀO Ý NGHĨA
+         ============================================== -->
+    <div id="step-welcome" class="step-section active flex-col items-center justify-center flex-1 px-6 pt-6 pb-12 z-10 relative">
+        <div class="w-24 h-24 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 shadow-xl shadow-pink-200/50 border border-pink-100">
+            <img src="https://img.icons8.com/external-flat-icons-inmotus-design/64/external-Camera-pink-flat-icons-inmotus-design.png" alt="Camera Icon" class="w-14 h-14 drop-shadow-md">
+        </div>
+        
+        <h2 class="text-2xl font-bold text-pink-600 mb-2 text-center">Trạm ảnh thanh xuân</h2>
+        <h2 class="text-4xl font-bold text-pink-400 logo-font mb-6 text-center drop-shadow-sm">HQ-Photo</h2>
+        
+        <div class="bg-white/60 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-white mb-10 max-w-sm relative">
+            <div class="absolute -top-3 -left-3 text-3xl opacity-50">✨</div>
+            <p class="text-gray-700 text-sm leading-relaxed text-center font-medium italic">
+                "Thời gian trôi đi, nhưng những kỷ niệm đẹp sẽ luôn còn mãi. HQ-Photo được tạo ra để giúp bạn gói ghém lại những nụ cười rạng rỡ, những cái ôm ấm áp và những khoảnh khắc tuyệt vời nhất bên những người thân yêu. <br><br>
+                Hãy thả lỏng, tạo dáng thật tự nhiên và để chúng mình lưu giữ lại mảnh ghép thanh xuân rực rỡ nhất của bạn nhé!"
+            </p>
+            <div class="absolute -bottom-3 -right-3 text-3xl opacity-50">📸</div>
+        </div>
+
+        <button onclick="showFrameSelection()" class="w-full max-w-[280px] bg-pink-500 hover:bg-pink-600 text-white font-bold text-lg py-4 rounded-full shadow-[0_8px_20px_rgba(236,72,153,0.4)] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+            Tiếp tục
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+        </button>
+    </div>
+
+    <!-- ==============================================
+         MÀN HÌNH 2: CHỌN LOẠI KHUNG ẢNH
+         ============================================== -->
+    <div id="step-selection" class="step-section flex-col items-center flex-1 px-4 pt-10 pb-10 z-10 relative">
+        <h2 class="text-2xl font-bold text-pink-600 mb-2 text-center">Bắt đầu nào!</h2>
+        <p class="text-gray-500 text-sm mb-8 text-center max-w-xs">Hôm nay bạn muốn thiết kế dải ảnh của mình có bao nhiêu khung hình?</p>
+        
+        <div class="flex flex-col gap-4 w-full max-w-sm">
+            <label class="flex items-center justify-between p-4 border-2 border-pink-100 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition active:scale-95 has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
+                <span class="font-bold text-gray-700 flex items-center gap-3">
+                    <span class="bg-gray-100 w-8 h-8 flex justify-center items-center rounded-md text-xs font-black text-gray-400">1</span> 
+                    Khung 1 Ảnh
+                </span>
+                <input type="radio" name="photoType" value="1" class="w-5 h-5 accent-pink-500">
+            </label>
+
+            <label class="flex items-center justify-between p-4 border-2 border-pink-100 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition active:scale-95 has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
+                <span class="font-bold text-gray-700 flex items-center gap-3">
+                    <span class="bg-gray-100 w-8 h-8 flex justify-center items-center rounded-md text-xs font-black text-gray-400">2</span> 
+                    Khung 2 Ảnh
+                </span>
+                <input type="radio" name="photoType" value="2" class="w-5 h-5 accent-pink-500">
+            </label>
+
+            <label class="flex items-center justify-between p-4 border-2 border-pink-100 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition active:scale-95 has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
+                <span class="font-bold text-gray-700 flex items-center gap-3">
+                    <span class="bg-pink-100 w-8 h-8 flex justify-center items-center rounded-md text-xs font-black text-pink-500">3</span> 
+                    Khung 3 Ảnh
+                </span>
+                <input type="radio" name="photoType" value="3" class="w-5 h-5 accent-pink-500" checked>
+            </label>
+
+            <label class="flex items-center justify-between p-4 border-2 border-pink-100 bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition active:scale-95 has-[:checked]:border-pink-500 has-[:checked]:bg-pink-50">
+                <span class="font-bold text-gray-700 flex items-center gap-3">
+                    <span class="bg-pink-100 w-8 h-8 flex justify-center items-center rounded-md text-xs font-black text-pink-500">4</span> 
+                    Khung 4 Ảnh
+                </span>
+                <input type="radio" name="photoType" value="4" class="w-5 h-5 accent-pink-500">
+            </label>
+        </div>
+
+        <div class="flex gap-4 w-full max-w-sm mt-10">
+            <button onclick="backToWelcome()" class="flex-1 bg-white/80 backdrop-blur-sm text-gray-500 border border-gray-200 font-bold py-4 rounded-xl shadow-sm active:scale-95 transition">Quay lại</button>
+            <button onclick="goToCamera()" class="flex-[2] bg-pink-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-pink-300 active:scale-95 transition flex justify-center items-center gap-2">
+                Bắt đầu chụp
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- TẠO MƯA TRÁI TIM & ĐIỀU HƯỚNG -->
     <script>
+        // Chuyển sang màn chọn khung
+        function showFrameSelection() {
+            document.getElementById('step-welcome').classList.remove('active');
+            document.getElementById('step-selection').classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Quay lại màn lời chào
+        function backToWelcome() {
+            document.getElementById('step-selection').classList.remove('active');
+            document.getElementById('step-welcome').classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Dẫn link sang trang chụp ảnh
         function goToCamera() {
             const selectedType = document.querySelector('input[name="photoType"]:checked').value;
             window.location.href = selectedType + 'khung.html';
         }
+
+        // Hệ thống tạo mưa trái tim
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-particle');
+            
+            // Random kí tự trái tim hoặc ngôi sao
+            const shapes = ['❤', '♥', '✨', '💕'];
+            heart.innerText = shapes[Math.floor(Math.random() * shapes.length)];
+            
+            // Random vị trí xuất phát, kích thước và tốc độ rơi
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 3 + 4 + 's'; // Rơi từ 4-7 giây
+            heart.style.fontSize = Math.random() * 12 + 10 + 'px'; // Kích thước từ 10-22px
+            
+            document.body.appendChild(heart);
+            
+            // Xóa trái tim khỏi DOM sau khi rơi xong để không làm nặng máy
+            setTimeout(() => {
+                heart.remove();
+            }, 7000);
+        }
+
+        // Cứ mỗi 400ms tạo ra 1 trái tim mới
+        setInterval(createHeart, 400);
     </script>
 </body>
 </html>
