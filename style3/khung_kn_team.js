@@ -13,7 +13,7 @@ ALL_FRAMES.push({
         canvasW: 807, canvasH: 2400,
         photos: [
             { x: 96, y: 104, w: 615, h: 460, angle: 0 },
-            { x: 136, y: 748, w: 520, h: 452, angle: 7 }, // Ảnh giữa được xoay nghiêng 7 độ
+            { x: 142, y: 755, w: 520, h: 452, angle: 7 }, // Ảnh giữa được xoay nghiêng 7 độ
             { x: 96, y: 1429, w: 615, h: 460, angle: 0 }
         ]
     }
