@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chụp 3 Ảnh - HQ-Photo (AI Beauty)</title>
+    <title>Chụp 3 Ảnh - HQ-Photo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css"> 
     
@@ -22,13 +22,9 @@
     <div id="mainCameraArea" class="flex flex-col items-center w-full">
         <div class="px-4 flex justify-center w-full relative">
             <div class="camera-container relative bg-gray-200">
-                <!-- Video gốc (Ẩn đi để giảm tải cho máy, AI sẽ vẽ lại toàn bộ lên Canvas) -->
                 <video id="camera" class="absolute inset-0 w-full h-full object-cover opacity-0" autoplay playsinline muted></video>
-                
-                <!-- Canvas AI: Chứa Video Đã Làm Đẹp + Phụ Kiện -->
                 <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300"></canvas>
 
-                <!-- NÚT LẬT CAMERA -->
                 <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
                 </button>
@@ -57,12 +53,12 @@
             <select id="countdownSelect" class="bg-white border border-pink-200 rounded px-2 py-1 outline-none text-gray-700 text-xs font-bold shadow-sm"><option value="3">3s</option><option value="5">5s</option></select>
         </div>
 
-        <!-- Các thanh phụ kiện nằm ngang -->
-        <div id="glassesContainer" class="w-full max-w-sm mx-auto mt-4"></div> 
+        <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
+        <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
 
-    <!-- MÀN HÌNH 2 & 3: CHỌN KHUNG VÀ KẾT QUẢ -->
+    <!-- MÀN HÌNH 2 & 3 -->
     <div id="frameSelectionArea" class="hidden flex-col items-center w-full mt-4 px-4">
         <h2 class="text-xl font-bold text-pink-500 mb-2">Chọn khung áp dụng</h2>
         <div class="grid grid-cols-2 gap-4 w-full max-w-sm" id="availableFramesGrid"></div>
@@ -78,30 +74,32 @@
         </div>
     </div>
 
-    <!-- NHÚNG CÁC SCRIPT -->
+    <!-- NHÚNG MODULES BỘ LỌC (LƯU Ý TRÌNH TỰ NÀY) -->
+    <script src="boloc/core_boloc.js"></script> 
+    <script src="boloc/mac_dinh.js"></script> 
+    <script src="boloc/trang_hong.js"></script> 
+
+    <!-- NHÚNG PHỤ KIỆN VÀ KHUNG -->
     <script src="Kinh/kinh.js"></script> 
     <script src="Mu/mu.js"></script> 
-    
     <script>var ALL_FRAMES = [];</script>
     <script src="style3/khung_cucxanh.js"></script> 
     <script src="style3/khung_gty.js"></script>
     <script src="style3/khung_kt_team.js"></script>
     <script src="style3/khung_kn_team.js"></script>
 
-    <!-- LOGIC AI BEAUTY & AR -->
+    <!-- LOGIC AR VÀ XỬ LÝ -->
     <script>
+        // QUẢN LÝ PHỤ KIỆN
         let currentAccessoryType = 'none';
         let currentAccessorySrc = null;
         const accessoryImgElement = new Image();
 
         function selectAccessory(type, src, btnElement) {
             currentAccessoryType = type;
-            if (src) {
-                currentAccessorySrc = src;
-                accessoryImgElement.src = src;
-            } else {
-                currentAccessorySrc = null;
-            }
+            if (src) { currentAccessorySrc = src; accessoryImgElement.src = src; } 
+            else { currentAccessorySrc = null; }
+            
             document.querySelectorAll('.acc-btn').forEach(btn => {
                 btn.classList.remove('border-pink-400');
                 btn.classList.add('border-transparent');
@@ -110,6 +108,7 @@
             btnElement.classList.add('border-pink-400');
         }
 
+        renderFilterPanel('filterPanelContainer');
         renderGlassesPanel('glassesContainer');
         renderHatsPanel('hatsContainer');
 
@@ -141,41 +140,36 @@
             arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            // BƯỚC 1: LÀM ĐẸP (BEAUTIFICATION)
-            // Blur(0.8px) làm phẳng mụn và nếp nhăn. Brightness & Saturate đẩy tone Trắng Hồng
+            // BƯỚC 1: XỬ LÝ MÀU NỀN THEO BỘ LỌC (ĐỌC TỪ OBjECT currentActiveFilter)
             arCtx.save();
-            arCtx.filter = 'brightness(1.12) contrast(1.02) saturate(1.15) sepia(0.05) hue-rotate(-2deg) blur(0.8px)';
+            arCtx.filter = currentActiveFilter ? currentActiveFilter.cssFilter : 'none';
             arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
             arCtx.restore();
 
-            // BƯỚC 2: AI TÔ MÔI & GẮN PHỤ KIỆN
+            // BƯỚC 2: AI NHẬN DIỆN CHI TIẾT
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
                 
-                // --- TÔ MÔI ĐỎ HỒNG ---
-                arCtx.save();
-                // 20 tọa độ tạo thành đường viền môi hoàn hảo của MediaPipe
-                const lipIndices = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
-                
-                arCtx.beginPath();
-                lipIndices.forEach((index, i) => {
-                    const pt = landmarks[index];
-                    const x = pt.x * arCanvas.width;
-                    const y = pt.y * arCanvas.height;
-                    if (i === 0) arCtx.moveTo(x, y);
-                    else arCtx.lineTo(x, y);
-                });
-                arCtx.closePath();
-                
-                arCtx.fillStyle = 'rgba(255, 60, 100, 0.25)'; // Tone đỏ hồng tự nhiên
-                arCtx.globalCompositeOperation = 'multiply';   // Đánh tệp vào da môi
-                arCtx.fill();
-                arCtx.restore();
+                // TÔ MÔI ĐỎ NẾU BỘ LỌC ĐANG CHỌN CHO PHÉP
+                if (currentActiveFilter && currentActiveFilter.hasLipstick) {
+                    arCtx.save();
+                    const lipIndices = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
+                    arCtx.beginPath();
+                    lipIndices.forEach((index, i) => {
+                        const pt = landmarks[index];
+                        if (i === 0) arCtx.moveTo(pt.x * arCanvas.width, pt.y * arCanvas.height);
+                        else arCtx.lineTo(pt.x * arCanvas.width, pt.y * arCanvas.height);
+                    });
+                    arCtx.closePath();
+                    arCtx.fillStyle = currentActiveFilter.lipstickColor;
+                    arCtx.globalCompositeOperation = 'multiply';
+                    arCtx.fill();
+                    arCtx.restore();
+                }
 
-                // --- GẮN KÍNH / MŨ ---
+                // GẮN KÍNH / MŨ
                 if (currentAccessoryType !== 'none' && currentAccessorySrc) {
-                    const leftEye = landmarks[33]; 
-                    const rightEye = landmarks[263];
+                    const leftEye = landmarks[33], rightEye = landmarks[263];
                     const x1 = leftEye.x * arCanvas.width, y1 = leftEye.y * arCanvas.height;
                     const x2 = rightEye.x * arCanvas.width, y2 = rightEye.y * arCanvas.height;
                     
@@ -187,18 +181,14 @@
                         const centerX = (x1 + x2) / 2, centerY = (y1 + y2) / 2;
                         const glassesW = eyeDistance * 2.3;
                         const glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
-                        arCtx.translate(centerX, centerY);
-                        arCtx.rotate(angle);
+                        arCtx.translate(centerX, centerY); arCtx.rotate(angle);
                         arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
                     } 
                     else if (currentAccessoryType === 'hat') {
-                        const forehead = landmarks[10];
-                        const hX = forehead.x * arCanvas.width;
-                        const hY = forehead.y * arCanvas.height;
+                        const hX = landmarks[10].x * arCanvas.width, hY = landmarks[10].y * arCanvas.height;
                         const hatW = eyeDistance * 3.2; 
                         const hatH = accessoryImgElement.height * (hatW / accessoryImgElement.width);
-                        arCtx.translate(hX, hY);
-                        arCtx.rotate(angle);
+                        arCtx.translate(hX, hY); arCtx.rotate(angle);
                         arCtx.drawImage(accessoryImgElement, -hatW / 2, -hatH * 0.7, hatW, hatH);
                     }
                     arCtx.restore();
@@ -212,10 +202,7 @@
 
         function startCamera() {
             if (aiCameraInstance) aiCameraInstance.stop();
-            
-            // Xử lý hiệu ứng gương (Lật Canvas)
             arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
-
             aiCameraInstance = new Camera(video, {
                 onFrame: async () => { await faceMesh.send({image: video}); },
                 width: 480, height: 640, 
@@ -226,17 +213,14 @@
 
         function switchCamera() {
             useFrontCamera = !useFrontCamera;
-            if(aiLoader) {
-                aiLoader.style.display = 'flex';
-                aiLoader.style.opacity = '1';
-            }
+            if(aiLoader) { aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; }
             startCamera();
         }
 
         startCamera();
 
         // =====================================
-        // ĐIỀU HƯỚNG & CHỤP ẢNH TỐI ƯU HÓA
+        // ĐIỀU HƯỚNG & CHỤP ẢNH TỐI ƯU
         // =====================================
         function goBack() {
             if (!resultArea.classList.contains('hidden')) {
@@ -255,16 +239,11 @@
 
         function takeSnapshot() {
             const tempCanvas = document.createElement('canvas'); 
-            tempCanvas.width = video.videoWidth; 
-            tempCanvas.height = video.videoHeight;
+            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
             const tCtx = tempCanvas.getContext('2d');
             
-            // Lấy nguyên lớp AR Canvas (Đã bao gồm: Da trắng hồng, Mịn da xóa mụn, Môi đỏ, Kính/Mũ)
             tCtx.save();
-            if (useFrontCamera) {
-                tCtx.translate(tempCanvas.width, 0); 
-                tCtx.scale(-1, 1);
-            }
+            if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.restore();
 
