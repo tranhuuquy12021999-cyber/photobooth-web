@@ -25,6 +25,11 @@
                 <video id="camera" class="filter-normal absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);" autoplay playsinline muted></video>
                 <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);"></canvas>
 
+                <!-- NÚT LẬT CAMERA -->
+                <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                </button>
+
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-300 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow">
                     Đã Chụp <span id="shootCount">0</span>/3
                 </div>
@@ -32,7 +37,7 @@
                 
                 <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div>
-                    <span class="text-xs text-pink-500 font-bold">AI đang khởi động...</span>
+                    <span class="text-xs text-pink-500 font-bold mt-2">AI đang khởi động...</span>
                 </div>
             </div>
         </div>
@@ -50,8 +55,6 @@
         </div>
 
         <div id="filterPanelContainer" class="w-full"></div> 
-        
-        <!-- NƠI CHỨA CÁC MODULE PHỤ KIỆN -->
         <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
@@ -72,7 +75,7 @@
         </div>
     </div>
 
-    <!-- NHÚNG CÁC SCRIPT (Bao gồm file Kính và Mũ đã tách riêng) -->
+    <!-- NHÚNG CÁC SCRIPT -->
     <script src="filters.js"></script> 
     <script src="Kinh/kinh.js"></script> 
     <script src="Mu/mu.js"></script> 
@@ -85,12 +88,10 @@
 
     <!-- LOGIC AR VÀ XỬ LÝ CHỤP -->
     <script>
-        // TRẠNG THÁI PHỤ KIỆN
         let currentAccessoryType = 'none';
         let currentAccessorySrc = null;
         const accessoryImgElement = new Image();
 
-        // Hàm xử lý khi bấm chọn phụ kiện từ bất kỳ file nào (kinh.js hoặc mu.js)
         function selectAccessory(type, src, btnElement) {
             currentAccessoryType = type;
             if (src) {
@@ -108,7 +109,6 @@
             btnElement.classList.add('border-pink-400');
         }
 
-        // KÍCH HOẠT HIỂN THỊ GIAO DIỆN
         renderFilterPanel('filterPanelContainer');
         renderGlassesPanel('glassesContainer');
         renderHatsPanel('hatsContainer');
@@ -125,6 +125,10 @@
         const resultArea = document.getElementById('resultArea');
         
         let rawImages = [], isProcessing = false;
+        
+        // BIẾN LƯU TRẠNG THÁI CAMERA
+        let useFrontCamera = true;
+        let aiCameraInstance = null;
 
         // =====================================
         // LOGIC AI NHẬN DIỆN KHUÔN MẶT
@@ -176,11 +180,36 @@
         faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         faceMesh.onResults(onResultsFaceMesh);
 
-        const aiCamera = new Camera(video, {
-            onFrame: async () => { await faceMesh.send({image: video}); },
-            width: 480, height: 640, facingMode: "user"
-        });
-        aiCamera.start();
+        // HÀM KHỞI TẠO CAMERA (CÓ THỂ ĐẢO CHIỀU)
+        function startCamera() {
+            if (aiCameraInstance) {
+                aiCameraInstance.stop();
+            }
+            
+            // Xử lý hiệu ứng lật gương bằng CSS
+            video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+            arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+
+            aiCameraInstance = new Camera(video, {
+                onFrame: async () => { await faceMesh.send({image: video}); },
+                width: 480, height: 640, 
+                facingMode: useFrontCamera ? "user" : "environment"
+            });
+            aiCameraInstance.start();
+        }
+
+        // HÀM ĐẢO CAMERA
+        function switchCamera() {
+            useFrontCamera = !useFrontCamera;
+            if(aiLoader) {
+                aiLoader.style.display = 'flex';
+                aiLoader.style.opacity = '1';
+            }
+            startCamera();
+        }
+
+        // Chạy camera lần đầu
+        startCamera();
 
         // =====================================
         // ĐIỀU HƯỚNG & CHỤP ẢNH
@@ -208,12 +237,16 @@
             
             tCtx.save();
             tCtx.filter = typeof activeFilterCSSString !== 'undefined' ? activeFilterCSSString : 'none'; 
-            tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
+            if (useFrontCamera) {
+                tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
+            }
             tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.restore();
 
             tCtx.save();
-            tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
+            if (useFrontCamera) {
+                tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
+            }
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.restore();
 
