@@ -2,6 +2,11 @@
 
 const glassesList = [
     { id: 'k1', src: 'Kinh/kinh1.png' },
+    { id: 'k1', src: 'Kinh/kinh3.png' },
+    { id: 'k1', src: 'Kinh/kinh4.png' },
+    { id: 'k1', src: 'Kinh/kinh5.png' },
+    { id: 'k1', src: 'Kinh/kinh6.png' },
+    { id: 'k1', src: 'Kinh/kinh7.png' },
     { id: 'k2', src: 'Kinh/kinh2.png' } // Bạn cứ thêm tiếp dòng ở đây nếu có kinh3, kinh4...
 ];
 
