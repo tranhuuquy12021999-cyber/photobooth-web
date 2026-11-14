@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chụp 3 Ảnh - HQ-Photo</title>
+    <title>Chụp 3 Ảnh - HQ-Photo (AI Beauty)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css"> 
     
@@ -21,9 +21,12 @@
     <!-- MÀN HÌNH 1: CAMERA -->
     <div id="mainCameraArea" class="flex flex-col items-center w-full">
         <div class="px-4 flex justify-center w-full relative">
-            <div class="camera-container relative">
-                <video id="camera" class="filter-normal absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);" autoplay playsinline muted></video>
-                <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);"></canvas>
+            <div class="camera-container relative bg-gray-200">
+                <!-- Video gốc (Ẩn đi để giảm tải cho máy, AI sẽ vẽ lại toàn bộ lên Canvas) -->
+                <video id="camera" class="absolute inset-0 w-full h-full object-cover opacity-0" autoplay playsinline muted></video>
+                
+                <!-- Canvas AI: Chứa Video Đã Làm Đẹp + Phụ Kiện -->
+                <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300"></canvas>
 
                 <!-- NÚT LẬT CAMERA -->
                 <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40">
@@ -54,8 +57,8 @@
             <select id="countdownSelect" class="bg-white border border-pink-200 rounded px-2 py-1 outline-none text-gray-700 text-xs font-bold shadow-sm"><option value="3">3s</option><option value="5">5s</option></select>
         </div>
 
-        <div id="filterPanelContainer" class="w-full"></div> 
-        <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
+        <!-- Các thanh phụ kiện nằm ngang -->
+        <div id="glassesContainer" class="w-full max-w-sm mx-auto mt-4"></div> 
         <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
 
@@ -76,7 +79,6 @@
     </div>
 
     <!-- NHÚNG CÁC SCRIPT -->
-    <script src="filters.js"></script> 
     <script src="Kinh/kinh.js"></script> 
     <script src="Mu/mu.js"></script> 
     
@@ -86,7 +88,7 @@
     <script src="style3/khung_kt_team.js"></script>
     <script src="style3/khung_kn_team.js"></script>
 
-    <!-- LOGIC AR VÀ XỬ LÝ CHỤP -->
+    <!-- LOGIC AI BEAUTY & AR -->
     <script>
         let currentAccessoryType = 'none';
         let currentAccessorySrc = null;
@@ -100,7 +102,6 @@
             } else {
                 currentAccessorySrc = null;
             }
-            
             document.querySelectorAll('.acc-btn').forEach(btn => {
                 btn.classList.remove('border-pink-400');
                 btn.classList.add('border-transparent');
@@ -109,7 +110,6 @@
             btnElement.classList.add('border-pink-400');
         }
 
-        renderFilterPanel('filterPanelContainer');
         renderGlassesPanel('glassesContainer');
         renderHatsPanel('hatsContainer');
 
@@ -125,13 +125,11 @@
         const resultArea = document.getElementById('resultArea');
         
         let rawImages = [], isProcessing = false;
-        
-        // BIẾN LƯU TRẠNG THÁI CAMERA
         let useFrontCamera = true;
         let aiCameraInstance = null;
 
         // =====================================
-        // LOGIC AI NHẬN DIỆN KHUÔN MẶT
+        // TRÁI TIM CỦA ỨNG DỤNG: AI BEAUTY & AR
         // =====================================
         function onResultsFaceMesh(results) {
             if(aiLoader) {
@@ -143,36 +141,68 @@
             arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            if (currentAccessoryType !== 'none' && currentAccessorySrc && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                const landmarks = results.multiFaceLandmarks[0];
-                const leftEye = landmarks[33]; 
-                const rightEye = landmarks[263];
-                const x1 = leftEye.x * arCanvas.width, y1 = leftEye.y * arCanvas.height;
-                const x2 = rightEye.x * arCanvas.width, y2 = rightEye.y * arCanvas.height;
-                
-                const eyeDistance = Math.hypot(x2 - x1, y2 - y1);
-                const angle = Math.atan2(y2 - y1, x2 - x1);
+            // BƯỚC 1: LÀM ĐẸP (BEAUTIFICATION)
+            // Blur(0.8px) làm phẳng mụn và nếp nhăn. Brightness & Saturate đẩy tone Trắng Hồng
+            arCtx.save();
+            arCtx.filter = 'brightness(1.12) contrast(1.02) saturate(1.15) sepia(0.05) hue-rotate(-2deg) blur(0.8px)';
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+            arCtx.restore();
 
+            // BƯỚC 2: AI TÔ MÔI & GẮN PHỤ KIỆN
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+                
+                // --- TÔ MÔI ĐỎ HỒNG ---
                 arCtx.save();
-                if (currentAccessoryType === 'glass') {
-                    const centerX = (x1 + x2) / 2, centerY = (y1 + y2) / 2;
-                    const glassesW = eyeDistance * 2.3;
-                    const glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
-                    arCtx.translate(centerX, centerY);
-                    arCtx.rotate(angle);
-                    arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
-                } 
-                else if (currentAccessoryType === 'hat') {
-                    const forehead = landmarks[10];
-                    const hX = forehead.x * arCanvas.width;
-                    const hY = forehead.y * arCanvas.height;
-                    const hatW = eyeDistance * 3.2; 
-                    const hatH = accessoryImgElement.height * (hatW / accessoryImgElement.width);
-                    arCtx.translate(hX, hY);
-                    arCtx.rotate(angle);
-                    arCtx.drawImage(accessoryImgElement, -hatW / 2, -hatH * 0.7, hatW, hatH);
-                }
+                // 20 tọa độ tạo thành đường viền môi hoàn hảo của MediaPipe
+                const lipIndices = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
+                
+                arCtx.beginPath();
+                lipIndices.forEach((index, i) => {
+                    const pt = landmarks[index];
+                    const x = pt.x * arCanvas.width;
+                    const y = pt.y * arCanvas.height;
+                    if (i === 0) arCtx.moveTo(x, y);
+                    else arCtx.lineTo(x, y);
+                });
+                arCtx.closePath();
+                
+                arCtx.fillStyle = 'rgba(255, 60, 100, 0.25)'; // Tone đỏ hồng tự nhiên
+                arCtx.globalCompositeOperation = 'multiply';   // Đánh tệp vào da môi
+                arCtx.fill();
                 arCtx.restore();
+
+                // --- GẮN KÍNH / MŨ ---
+                if (currentAccessoryType !== 'none' && currentAccessorySrc) {
+                    const leftEye = landmarks[33]; 
+                    const rightEye = landmarks[263];
+                    const x1 = leftEye.x * arCanvas.width, y1 = leftEye.y * arCanvas.height;
+                    const x2 = rightEye.x * arCanvas.width, y2 = rightEye.y * arCanvas.height;
+                    
+                    const eyeDistance = Math.hypot(x2 - x1, y2 - y1);
+                    const angle = Math.atan2(y2 - y1, x2 - x1);
+
+                    arCtx.save();
+                    if (currentAccessoryType === 'glass') {
+                        const centerX = (x1 + x2) / 2, centerY = (y1 + y2) / 2;
+                        const glassesW = eyeDistance * 2.3;
+                        const glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
+                        arCtx.translate(centerX, centerY);
+                        arCtx.rotate(angle);
+                        arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
+                    } 
+                    else if (currentAccessoryType === 'hat') {
+                        const forehead = landmarks[10];
+                        const hX = forehead.x * arCanvas.width;
+                        const hY = forehead.y * arCanvas.height;
+                        const hatW = eyeDistance * 3.2; 
+                        const hatH = accessoryImgElement.height * (hatW / accessoryImgElement.width);
+                        arCtx.translate(hX, hY);
+                        arCtx.rotate(angle);
+                        arCtx.drawImage(accessoryImgElement, -hatW / 2, -hatH * 0.7, hatW, hatH);
+                    }
+                    arCtx.restore();
+                }
             }
         }
 
@@ -180,14 +210,10 @@
         faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         faceMesh.onResults(onResultsFaceMesh);
 
-        // HÀM KHỞI TẠO CAMERA (CÓ THỂ ĐẢO CHIỀU)
         function startCamera() {
-            if (aiCameraInstance) {
-                aiCameraInstance.stop();
-            }
+            if (aiCameraInstance) aiCameraInstance.stop();
             
-            // Xử lý hiệu ứng lật gương bằng CSS
-            video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+            // Xử lý hiệu ứng gương (Lật Canvas)
             arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
 
             aiCameraInstance = new Camera(video, {
@@ -198,7 +224,6 @@
             aiCameraInstance.start();
         }
 
-        // HÀM ĐẢO CAMERA
         function switchCamera() {
             useFrontCamera = !useFrontCamera;
             if(aiLoader) {
@@ -208,49 +233,43 @@
             startCamera();
         }
 
-        // Chạy camera lần đầu
         startCamera();
 
         // =====================================
-        // ĐIỀU HƯỚNG & CHỤP ẢNH
+        // ĐIỀU HƯỚNG & CHỤP ẢNH TỐI ƯU HÓA
         // =====================================
         function goBack() {
             if (!resultArea.classList.contains('hidden')) {
                 resultArea.classList.add('hidden'); resultArea.classList.remove('flex');
                 frameSelectionArea.classList.remove('hidden'); frameSelectionArea.classList.add('flex');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
+                window.scrollTo({ top: 0, behavior: 'smooth' }); return;
             }
             if (!frameSelectionArea.classList.contains('hidden')) {
                 frameSelectionArea.classList.add('hidden'); frameSelectionArea.classList.remove('flex');
                 rawImages = []; document.getElementById('shootCount').innerText = '0';
                 mainCameraArea.classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
+                window.scrollTo({ top: 0, behavior: 'smooth' }); return;
             }
             window.location.href = 'index.html';
         }
 
         function takeSnapshot() {
-            const tempCanvas = document.createElement('canvas'); tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
+            const tempCanvas = document.createElement('canvas'); 
+            tempCanvas.width = video.videoWidth; 
+            tempCanvas.height = video.videoHeight;
             const tCtx = tempCanvas.getContext('2d');
             
-            tCtx.save();
-            tCtx.filter = typeof activeFilterCSSString !== 'undefined' ? activeFilterCSSString : 'none'; 
-            if (useFrontCamera) {
-                tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
-            }
-            tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-            tCtx.restore();
-
+            // Lấy nguyên lớp AR Canvas (Đã bao gồm: Da trắng hồng, Mịn da xóa mụn, Môi đỏ, Kính/Mũ)
             tCtx.save();
             if (useFrontCamera) {
-                tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
+                tCtx.translate(tempCanvas.width, 0); 
+                tCtx.scale(-1, 1);
             }
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.restore();
 
-            rawImages.push(tempCanvas); document.getElementById('shootCount').innerText = rawImages.length;
+            rawImages.push(tempCanvas); 
+            document.getElementById('shootCount').innerText = rawImages.length;
         }
 
         async function captureManual() {
@@ -277,8 +296,7 @@
             mainCameraArea.classList.add('hidden');
             const grid = document.getElementById('availableFramesGrid'); grid.innerHTML = '';
             
-            const frames3 = ALL_FRAMES.filter(f => f.type === 3);
-            frames3.forEach(frame => {
+            ALL_FRAMES.filter(f => f.type === 3).forEach(frame => {
                 const div = document.createElement('div');
                 div.className = `flex flex-col bg-white p-2 rounded-xl shadow-sm border border-pink-100 cursor-pointer active:scale-95 transition`;
                 div.onclick = () => processFinalImage(frame);
