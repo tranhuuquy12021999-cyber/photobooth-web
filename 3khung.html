@@ -1,111 +1,432 @@
-// =====================================
-        // TRÁI TIM CỦA ỨNG DỤNG: AI BEAUTY MASKING
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chụp 3 Ảnh - HQ-Photo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css"> 
+    
+    <!-- THƯ VIỆN AI GOOGLE -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #fdf2f8; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-pink-50 min-h-screen font-sans flex flex-col pb-4 h-[100dvh]">
+
+    <div class="flex justify-between items-center p-4 mb-1 flex-shrink-0">
+        <button onclick="goBack()" class="text-gray-500 hover:text-pink-500 font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm transition">← Quay lại</button>
+        <div class="text-right"><h1 class="text-2xl text-pink-400 logo-font">HQ-Photo</h1></div>
+    </div>
+
+    <!-- ==============================================
+         MODAL XEM TRƯỚC VÀ CHỤP LẠI (Ẩn mặc định)
+         ============================================== -->
+    <div id="previewModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex-col items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <button onclick="closePreview()" class="absolute top-6 right-6 text-white bg-gray-800/60 rounded-full p-2 hover:bg-gray-700 active:scale-90 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        
+        <div class="text-pink-400 font-bold mb-4">Xem trước ảnh <span id="previewIndexLabel">1</span></div>
+        <img id="previewImage" class="max-h-[65vh] max-w-full rounded-xl shadow-2xl border-2 border-pink-400 mb-8 object-contain">
+        
+        <button onclick="retakeCurrentPhoto()" class="w-full max-w-xs bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 rounded-full shadow-[0_8px_20px_rgba(236,72,153,0.4)] active:scale-95 transition flex justify-center items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+            Chụp lại ảnh này
+        </button>
+    </div>
+
+    <!-- ==============================================
+         MÀN HÌNH 1: CAMERA VÀ LÀM ĐẸP
+         ============================================== -->
+    <div id="mainCameraArea" class="flex flex-col items-center w-full flex-1 overflow-y-auto">
+        <div class="px-4 flex justify-center w-full relative">
+            <div class="camera-container relative bg-gray-200 shadow-md">
+                <video id="camera" class="absolute inset-0 w-full h-full object-cover opacity-0" autoplay playsinline muted></video>
+                <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300"></canvas>
+
+                <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                </button>
+
+                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-400 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow border border-pink-300">
+                    Đã Chụp <span id="shootCount">0</span>/3
+                </div>
+                <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30"></div>
+                
+                <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div>
+                    <span class="text-xs text-pink-500 font-bold mt-2">AI đang khởi động...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DANH SÁCH ẢNH THUMBNAIL MINI (MỚI) -->
+        <div id="thumbnailsContainer" class="flex justify-center gap-3 mt-3 mb-1 w-full max-w-sm px-4">
+            <!-- JS sẽ render ảnh mini vào đây -->
+        </div>
+
+        <!-- CỤM NÚT CHỤP ẢNH -->
+        <div id="captureControls" class="flex justify-center items-center gap-6 mt-3 w-full max-w-sm mx-auto">
+            <button onclick="captureManual()" class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center text-pink-400 shadow-inner font-medium text-[10px] flex-col active:scale-95 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
+                Tay
+            </button>
+            <button onclick="startAutoCapture()" class="w-20 h-20 bg-pink-400 rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 border-white active:scale-95 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
+                <span class="text-[9px] tracking-wider">AUTO</span>
+            </button>
+            <select id="countdownSelect" class="bg-white border border-pink-200 rounded px-2 py-1 outline-none text-gray-700 text-xs font-bold shadow-sm"><option value="3">3s</option><option value="5">5s</option></select>
+        </div>
+
+        <!-- NÚT TIẾP TỤC (Hiện khi chụp đủ 3 ảnh) -->
+        <div id="proceedControls" class="hidden justify-center items-center mt-3 w-full max-w-sm mx-auto px-4">
+            <button onclick="showWorkspace()" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-pink-200 active:scale-95 transition flex justify-center items-center gap-2">
+                Hoàn thành & Chọn khung
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+
+        <div id="filterPanelContainer" class="w-full max-w-sm mx-auto mt-2"></div> 
+        <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
+        <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
+    </div>
+
+    <!-- ==============================================
+         MÀN HÌNH 2: WORKSPACE CHỌN KHUNG GIAO DIỆN
+         ============================================== -->
+    <div id="workspaceArea" class="hidden w-full flex-1 px-3 flex-row gap-3 overflow-hidden">
+        <div class="w-[48%] flex flex-col items-center h-full">
+            <div class="bg-green-500 text-white text-[10px] font-bold py-1 px-3 rounded-full mb-2 flex items-center gap-1 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                Demo Khung
+            </div>
+            <div class="flex-1 w-full flex justify-center items-start overflow-hidden bg-white p-1 shadow-md border border-gray-200 rounded-md">
+                <canvas id="resultCanvas" class="w-full h-auto object-contain"></canvas>
+            </div>
+            <button onclick="downloadImage()" class="mt-3 w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md active:scale-95 transition text-sm flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Tải ảnh
+            </button>
+            <button onclick="goBack()" class="mt-2 w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-bold active:scale-95 transition text-sm">Chụp lại</button>
+        </div>
+        <div class="w-[52%] flex flex-col h-full bg-white rounded-xl shadow-sm border border-pink-100 p-2 overflow-hidden">
+            <div class="text-pink-400 font-bold text-xs text-center mb-2 pb-2 border-b border-pink-50">Chọn Khung</div>
+            <div class="grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar h-full pb-10" id="availableFramesGrid"></div>
+        </div>
+    </div>
+
+    <!-- NHÚNG MODULES -->
+    <script src="boloc/core_boloc.js"></script> 
+    <script src="boloc/mac_dinh.js"></script> 
+    <script src="boloc/trang_hong.js"></script> 
+    <script src="Kinh/kinh.js"></script> 
+    <script src="Mu/mu.js"></script> 
+    <script>var ALL_FRAMES = [];</script>
+    <script src="style3/khung_cucxanh.js"></script> 
+    <script src="style3/khung_gty.js"></script>
+    <script src="style3/khung_kt_team.js"></script>
+    <script src="style3/khung_kn_team.js"></script>
+
+    <!-- LOGIC ỨNG DỤNG CHÍNH -->
+    <script>
+        // PHỤ KIỆN
+        let currentAccessoryType = 'none', currentAccessorySrc = null;
+        const accessoryImgElement = new Image();
+        function selectAccessory(type, src, btnElement) {
+            currentAccessoryType = type;
+            if (src) { currentAccessorySrc = src; accessoryImgElement.src = src; } 
+            else { currentAccessorySrc = null; }
+            document.querySelectorAll('.acc-btn').forEach(btn => { btn.classList.remove('border-pink-400'); btn.classList.add('border-transparent'); });
+            btnElement.classList.remove('border-transparent'); btnElement.classList.add('border-pink-400');
+        }
+
+        renderFilterPanel('filterPanelContainer');
+        renderGlassesPanel('glassesContainer');
+        renderHatsPanel('hatsContainer');
+
+        const video = document.getElementById('camera');
+        const arCanvas = document.getElementById('arCanvas');
+        const arCtx = arCanvas.getContext('2d');
+        const canvas = document.getElementById('resultCanvas');
+        const ctx = canvas.getContext('2d');
+        const aiLoader = document.getElementById('aiLoader');
+        
+        const mainCameraArea = document.getElementById('mainCameraArea');
+        const workspaceArea = document.getElementById('workspaceArea');
+        
+        let rawImages = [], isProcessing = false;
+        let useFrontCamera = true, aiCameraInstance = null;
+        
+        // CÁC BIẾN CHO TÍNH NĂNG CHỤP LẠI
+        let viewingPhotoIndex = -1;
+        let retakingIndex = -1;
+
+        // =====================================
+        // TRÁI TIM CỦA ỨNG DỤNG: AI BEAUTY
         // =====================================
         function onResultsFaceMesh(results) {
-            if(aiLoader) {
-                aiLoader.style.opacity = '0';
-                setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300);
-            }
-
-            arCanvas.width = video.videoWidth;
-            arCanvas.height = video.videoHeight;
+            if(aiLoader) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300); }
+            arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            // BƯỚC 1: VẼ LỚP NỀN (CẢNH VẬT)
             arCtx.save();
             arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
             arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
             arCtx.restore();
 
-            // BƯỚC 2: AI NHẬN DIỆN CHI TIẾT
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
-                
-                // LÀM TRẮNG MỊN CHỈ VÙNG MẶT BẰNG MẶT NẠ (MASK)
                 if (currentActiveFilter && currentActiveFilter.faceFilter) {
-                    // Tạo một Canvas ẩn tạm thời để xử lý mặt nạ
-                    if (!window.faceMaskCanvas) {
-                        window.faceMaskCanvas = document.createElement('canvas');
-                        window.faceMaskCtx = window.faceMaskCanvas.getContext('2d');
-                    }
-                    const fmCanvas = window.faceMaskCanvas;
-                    const fmCtx = window.faceMaskCtx;
-                    fmCanvas.width = arCanvas.width;
-                    fmCanvas.height = arCanvas.height;
+                    if (!window.faceMaskCanvas) { window.faceMaskCanvas = document.createElement('canvas'); window.faceMaskCtx = window.faceMaskCanvas.getContext('2d'); }
+                    const fmCanvas = window.faceMaskCanvas, fmCtx = window.faceMaskCtx;
+                    fmCanvas.width = arCanvas.width; fmCanvas.height = arCanvas.height;
 
-                    // Vẽ ảnh đã qua bộ lọc Trắng Mịn lên Canvas tạm
-                    fmCtx.save();
-                    fmCtx.filter = currentActiveFilter.faceFilter;
-                    fmCtx.drawImage(results.image, 0, 0, fmCanvas.width, fmCanvas.height);
-                    fmCtx.restore();
+                    fmCtx.save(); fmCtx.filter = currentActiveFilter.faceFilter;
+                    fmCtx.drawImage(results.image, 0, 0, fmCanvas.width, fmCanvas.height); fmCtx.restore();
 
-                    // Cắt lấy đúng vùng mặt: Tọa độ 36 điểm viền ngoài cùng khuôn mặt của Face Mesh
                     fmCtx.globalCompositeOperation = 'destination-in';
                     const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
-                    
                     fmCtx.beginPath();
-                    FACE_OVAL.forEach((index, i) => {
-                        const pt = landmarks[index];
-                        const x = pt.x * fmCanvas.width;
-                        const y = pt.y * fmCanvas.height;
-                        if (i === 0) fmCtx.moveTo(x, y);
-                        else fmCtx.lineTo(x, y);
-                    });
+                    FACE_OVAL.forEach((index, i) => { const pt = landmarks[index]; const x = pt.x * fmCanvas.width, y = pt.y * fmCanvas.height; if (i === 0) fmCtx.moveTo(x, y); else fmCtx.lineTo(x, y); });
                     fmCtx.closePath();
-                    
-                    // Tạo hiệu ứng viền mờ (Feather) để vùng da cổ và mặt không bị gắt
-                    fmCtx.shadowColor = 'black';
-                    fmCtx.shadowBlur = 20; 
-                    fmCtx.fillStyle = 'black';
-                    fmCtx.fill();
-                    fmCtx.fill(); // Tô 2 lần để lõi giữa mặt đặc lại, giữ viền mờ
-
-                    // In lớp mặt nạ làm trắng này đè lên ảnh gốc trên màn hình chính
+                    fmCtx.shadowColor = 'black'; fmCtx.shadowBlur = 20; fmCtx.fillStyle = 'black'; fmCtx.fill(); fmCtx.fill(); 
                     arCtx.drawImage(fmCanvas, 0, 0);
                 }
-
-                // TÔ MÔI ĐỎ
                 if (currentActiveFilter && currentActiveFilter.hasLipstick) {
                     arCtx.save();
                     const lipIndices = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
                     arCtx.beginPath();
-                    lipIndices.forEach((index, i) => {
-                        const pt = landmarks[index];
-                        if (i === 0) arCtx.moveTo(pt.x * arCanvas.width, pt.y * arCanvas.height);
-                        else arCtx.lineTo(pt.x * arCanvas.width, pt.y * arCanvas.height);
-                    });
+                    lipIndices.forEach((index, i) => { const pt = landmarks[index]; if (i === 0) arCtx.moveTo(pt.x * arCanvas.width, pt.y * arCanvas.height); else arCtx.lineTo(pt.x * arCanvas.width, pt.y * arCanvas.height); });
                     arCtx.closePath();
-                    arCtx.fillStyle = currentActiveFilter.lipstickColor;
-                    arCtx.globalCompositeOperation = 'multiply';
-                    arCtx.fill();
-                    arCtx.restore();
+                    arCtx.fillStyle = currentActiveFilter.lipstickColor; arCtx.globalCompositeOperation = 'multiply'; arCtx.fill(); arCtx.restore();
                 }
-
-                // GẮN KÍNH / MŨ
                 if (currentAccessoryType !== 'none' && currentAccessorySrc) {
                     const leftEye = landmarks[33], rightEye = landmarks[263];
-                    const x1 = leftEye.x * arCanvas.width, y1 = leftEye.y * arCanvas.height;
-                    const x2 = rightEye.x * arCanvas.width, y2 = rightEye.y * arCanvas.height;
-                    
-                    const eyeDistance = Math.hypot(x2 - x1, y2 - y1);
-                    const angle = Math.atan2(y2 - y1, x2 - x1);
-
+                    const eyeDistance = Math.hypot(rightEye.x * arCanvas.width - leftEye.x * arCanvas.width, rightEye.y * arCanvas.height - leftEye.y * arCanvas.height);
+                    const angle = Math.atan2(rightEye.y * arCanvas.height - leftEye.y * arCanvas.height, rightEye.x * arCanvas.width - leftEye.x * arCanvas.width);
                     arCtx.save();
                     if (currentAccessoryType === 'glass') {
-                        const centerX = (x1 + x2) / 2, centerY = (y1 + y2) / 2;
-                        const glassesW = eyeDistance * 2.3;
-                        const glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
-                        arCtx.translate(centerX, centerY); arCtx.rotate(angle);
-                        arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
-                    } 
-                    else if (currentAccessoryType === 'hat') {
+                        const centerX = (leftEye.x * arCanvas.width + rightEye.x * arCanvas.width) / 2, centerY = (leftEye.y * arCanvas.height + rightEye.y * arCanvas.height) / 2;
+                        const glassesW = eyeDistance * 2.3, glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
+                        arCtx.translate(centerX, centerY); arCtx.rotate(angle); arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
+                    } else if (currentAccessoryType === 'hat') {
                         const hX = landmarks[10].x * arCanvas.width, hY = landmarks[10].y * arCanvas.height;
-                        const hatW = eyeDistance * 3.2; 
-                        const hatH = accessoryImgElement.height * (hatW / accessoryImgElement.width);
-                        arCtx.translate(hX, hY); arCtx.rotate(angle);
-                        arCtx.drawImage(accessoryImgElement, -hatW / 2, -hatH * 0.7, hatW, hatH);
+                        const hatW = eyeDistance * 3.2, hatH = accessoryImgElement.height * (hatW / accessoryImgElement.width);
+                        arCtx.translate(hX, hY); arCtx.rotate(angle); arCtx.drawImage(accessoryImgElement, -hatW / 2, -hatH * 0.7, hatW, hatH);
                     }
                     arCtx.restore();
                 }
             }
         }
+        const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+        faceMesh.onResults(onResultsFaceMesh);
+
+        function startCamera() {
+            if (aiCameraInstance) aiCameraInstance.stop();
+            arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+            aiCameraInstance = new Camera(video, { onFrame: async () => { await faceMesh.send({image: video}); }, width: 480, height: 640, facingMode: useFrontCamera ? "user" : "environment" });
+            aiCameraInstance.start();
+        }
+        function switchCamera() { useFrontCamera = !useFrontCamera; if(aiLoader) { aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; } startCamera(); }
+        startCamera();
+
+        // =====================================
+        // TÍNH NĂNG THUMBNAIL VÀ XEM TRƯỚC
+        // =====================================
+        function updateThumbnails() {
+            const container = document.getElementById('thumbnailsContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < rawImages.length) {
+                    // Hiện ảnh thật lấy từ Canvas
+                    const imgData = rawImages[i].toDataURL('image/jpeg', 0.8);
+                    container.innerHTML += `
+                        <div onclick="openPreview(${i})" class="w-14 h-[75px] bg-white border-2 border-pink-400 rounded-md shadow-sm overflow-hidden cursor-pointer active:scale-90 transition">
+                            <img src="${imgData}" class="w-full h-full object-cover">
+                        </div>
+                    `;
+                } else {
+                    // Ô trống chờ chụp
+                    container.innerHTML += `
+                        <div class="w-14 h-[75px] bg-pink-50/50 border border-pink-200 rounded-md shadow-inner flex items-center justify-center text-pink-300 text-xs font-bold">${i + 1}</div>
+                    `;
+                }
+            }
+        }
+        
+        // Khởi tạo hàng thumbnail trống ngay khi vào trang
+        updateThumbnails();
+
+        function openPreview(index) {
+            viewingPhotoIndex = index;
+            const modal = document.getElementById('previewModal');
+            document.getElementById('previewImage').src = rawImages[index].toDataURL('image/jpeg', 0.9);
+            document.getElementById('previewIndexLabel').innerText = index + 1;
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closePreview() {
+            const modal = document.getElementById('previewModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+        }
+
+        async function retakeCurrentPhoto() {
+            retakingIndex = viewingPhotoIndex;
+            closePreview();
+            if(isProcessing) return;
+            isProcessing = true;
+            
+            // Ẩn nút "Hoàn thành" đi để người dùng tập trung chụp lại
+            document.getElementById('proceedControls').classList.add('hidden');
+            document.getElementById('proceedControls').classList.remove('flex');
+            
+            await countdownTimer(3); // Tự động đếm ngược 3s
+            takeSnapshot();
+            isProcessing = false;
+            checkReadyToProceed();
+        }
+
+        function checkReadyToProceed() {
+            if(rawImages.length >= 3 && retakingIndex === -1) {
+                document.getElementById('captureControls').classList.add('hidden');
+                document.getElementById('captureControls').classList.remove('flex');
+                document.getElementById('proceedControls').classList.remove('hidden');
+                document.getElementById('proceedControls').classList.add('flex');
+            } else {
+                document.getElementById('captureControls').classList.remove('hidden');
+                document.getElementById('captureControls').classList.add('flex');
+                document.getElementById('proceedControls').classList.add('hidden');
+                document.getElementById('proceedControls').classList.remove('flex');
+            }
+        }
+
+        // =====================================
+        // ĐIỀU HƯỚNG & CHỤP ẢNH
+        // =====================================
+        function goBack() {
+            if (!workspaceArea.classList.contains('hidden')) {
+                workspaceArea.classList.add('hidden'); workspaceArea.classList.remove('flex');
+                rawImages = []; retakingIndex = -1;
+                document.getElementById('shootCount').innerText = '0';
+                updateThumbnails(); checkReadyToProceed();
+                mainCameraArea.classList.remove('hidden'); mainCameraArea.classList.add('flex');
+                return;
+            }
+            window.location.href = 'index.html';
+        }
+
+        function takeSnapshot() {
+            const tempCanvas = document.createElement('canvas'); 
+            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            tCtx.save();
+            if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
+            tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.restore();
+
+            // Lưu ảnh vào đúng vị trí nếu đang chụp lại, hoặc thêm mới
+            if (retakingIndex !== -1) {
+                rawImages[retakingIndex] = tempCanvas;
+                retakingIndex = -1; // Reset trạng thái
+            } else {
+                rawImages.push(tempCanvas); 
+            }
+            
+            document.getElementById('shootCount').innerText = rawImages.length;
+            updateThumbnails();
+        }
+
+        async function captureManual() {
+            if(isProcessing || (rawImages.length >= 3 && retakingIndex === -1)) return;
+            await countdownTimer(1); takeSnapshot();
+            checkReadyToProceed();
+        }
+
+        async function startAutoCapture() {
+            if(isProcessing) return; isProcessing = true; 
+            const remaining = 3 - rawImages.length;
+            const val = parseInt(document.getElementById('countdownSelect').value);
+            for(let i = 0; i < remaining; i++) { 
+                await countdownTimer(val); 
+                takeSnapshot(); 
+            }
+            isProcessing = false; 
+            checkReadyToProceed();
+        }
+
+        function countdownTimer(sec) {
+            return new Promise(res => {
+                const el = document.getElementById('countdown'); el.classList.remove('hidden'); let count = sec; el.innerText = count;
+                const intv = setInterval(() => { count--; if(count>0) el.innerText = count; else { clearInterval(intv); el.classList.add('hidden'); res(); } }, 1000);
+            });
+        }
+
+        // =====================================
+        // WORKSPACE CHỌN KHUNG
+        // =====================================
+        function showWorkspace() {
+            mainCameraArea.classList.add('hidden'); mainCameraArea.classList.remove('flex');
+            const grid = document.getElementById('availableFramesGrid'); grid.innerHTML = '';
+            
+            const frames3 = ALL_FRAMES.filter(f => f.type === 3);
+            frames3.forEach((frame) => {
+                const div = document.createElement('div');
+                div.className = `frame-item flex flex-col items-center bg-gray-50 p-1 rounded-md border-2 border-transparent cursor-pointer transition`;
+                div.id = `frame_btn_${frame.id}`;
+                
+                div.onclick = () => {
+                    document.querySelectorAll('.frame-item').forEach(el => el.classList.remove('border-pink-500'));
+                    div.classList.add('border-pink-500');
+                    processFinalImage(frame);
+                };
+                
+                div.innerHTML = `
+                    <img src="${frame.src}" class="w-full aspect-[1/3] object-contain rounded drop-shadow-sm mb-1">
+                    <span class="text-[9px] font-bold text-gray-600 text-center w-full truncate leading-tight">${frame.name}</span>
+                `;
+                grid.appendChild(div);
+            });
+            
+            workspaceArea.classList.remove('hidden'); workspaceArea.classList.add('flex');
+            
+            // Tự động load khung đầu tiên
+            if(frames3.length > 0) {
+                document.getElementById(`frame_btn_${frames3[0].id}`).click();
+            }
+        }
+
+        async function processFinalImage(frameConfig) {
+            const layout = frameConfig.layout; 
+            canvas.width = layout.canvasW; canvas.height = layout.canvasH; 
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            rawImages.forEach((img, idx) => {
+                const slot = layout.photos[idx]; if(!slot) return;
+                const srcW = (img.width/img.height < slot.w/slot.h) ? img.width : img.height * (slot.w/slot.h);
+                const srcH = (img.width/img.height < slot.w/slot.h) ? img.width / (slot.w/slot.h) : img.height;
+                const srcX = (img.width - srcW)/2, srcY = (img.height - srcH)/2;
+                
+                ctx.save(); ctx.translate(slot.x + slot.w/2, slot.y + slot.h/2); if(slot.angle) ctx.rotate(slot.angle * Math.PI/180);
+                ctx.drawImage(img, srcX, srcY, srcW, srcH, -slot.w/2, -slot.h/2, slot.w, slot.h); ctx.restore();
+            });
+
+            await new Promise(res => {
+                const frameImg = new Image(); frameImg.onload = () => { ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height); res(); };
+                frameImg.onerror = () => res(); frameImg.src = frameConfig.src;
+            });
+        }
+
+        function downloadImage() { const link = document.createElement('a'); link.download = `HQ_Photo_${Date.now()}.png`; link.href = canvas.toDataURL('image/png', 1.0); link.click(); }
+    </script>
+</body>
+</html>
