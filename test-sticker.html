@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test AR Sticker - HQ Photo</title>
+    <title>Test AR Mũ - HQ Photo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- TẢI CÁC THƯ VIỆN AI NHẬN DIỆN KHUÔN MẶT CỦA GOOGLE -->
@@ -11,24 +11,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
     <style>
-        .mirror {
-            transform: scaleX(-1);
-        }
-        /* Màn hình loading AI */
+        .mirror { transform: scaleX(-1); }
         #loader {
-            position: absolute;
-            inset: 0;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
+            position: absolute; inset: 0; background: rgba(255, 255, 255, 0.9);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
         }
         .spinner {
             border: 4px solid #f3f4f6; border-top: 4px solid #ec4899;
-            border-radius: 50%; width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -36,32 +26,26 @@
 <body class="bg-pink-50 min-h-screen flex flex-col items-center justify-center p-4 font-sans">
 
     <div class="w-full max-w-md bg-white p-4 rounded-2xl shadow-xl relative overflow-hidden">
-        <h2 class="text-center text-pink-500 font-bold mb-4">Gương Thần AI 😎</h2>
+        <h2 class="text-center text-pink-500 font-bold mb-4">Test Đội Mũ AI 🧢</h2>
         
-        <!-- Video ẩn (chỉ dùng để AI đọc dữ liệu) -->
         <video id="videoElement" class="hidden" autoplay playsinline muted></video>
         
-        <!-- Nơi hiển thị kết quả Camera + Kính (Đã lật gương) -->
         <div class="relative rounded-xl overflow-hidden bg-black aspect-[3/4] shadow-inner">
             <canvas id="outputCanvas" class="w-full h-full object-cover mirror"></canvas>
             
-            <!-- Loader sẽ biến mất khi AI tải xong model -->
             <div id="loader">
                 <div class="spinner mb-2"></div>
                 <span class="text-pink-500 font-bold text-sm">AI đang khởi động...</span>
-                <span class="text-gray-400 text-xs mt-1">(Lần đầu có thể mất 3-5 giây)</span>
             </div>
         </div>
         
-        <!-- Nút Thoát -->
         <button onclick="location.href='index.html'" class="mt-6 w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl active:scale-95 transition">
             Quay lại trang chủ
         </button>
     </div>
 
-    <!-- Ảnh Sticker: Hãy đảm bảo bạn đã tải file kinh.png lên github -->
-    <!-- Nếu không có file kinh.png, trình duyệt sẽ tự động lấy link ảnh dự phòng ở thuộc tính onerror -->
-    <img id="stickerImg" src="kinh.png" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Sunglasses_icon.svg/512px-Sunglasses_icon.svg.png'" class="hidden" crossorigin="anonymous">
+    <!-- Ảnh Mũ: Sẽ lấy file mu1.png trong thư mục Mu. Nếu chưa có file sẽ lấy link dự phòng -->
+    <img id="stickerImg" src="Mu/mu1.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/9334/9334135.png'" class="hidden" crossorigin="anonymous">
 
     <script>
         const videoElement = document.getElementById('videoElement');
@@ -70,75 +54,64 @@
         const stickerImg = document.getElementById('stickerImg');
         const loader = document.getElementById('loader');
 
-        // Hàm xử lý mỗi khi AI quét được khuôn mặt
         function onResults(results) {
-            // Ẩn loader khi bắt đầu có hình ảnh
             if(loader) loader.style.display = 'none';
 
-            // Thiết lập kích thước canvas bằng kích thước thật của video
             canvasElement.width = results.image.width;
             canvasElement.height = results.image.height;
 
-            // Xóa canvas cũ
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-            // 1. Vẽ hình ảnh video gốc lên trước
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-            // 2. Nếu phát hiện có khuôn mặt
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
 
-                // Lấy tọa độ 2 đuôi mắt (Trong MediaPipe: Mắt trái là điểm 33, mắt phải là điểm 263)
+                // 1. Dùng 2 đuôi mắt để tính góc nghiêng đầu và tỷ lệ thu phóng
                 const leftEye = landmarks[33]; 
                 const rightEye = landmarks[263];
+                // 2. Dùng đỉnh trán để làm điểm neo (chỗ đặt chiếc mũ)
+                const forehead = landmarks[10];
 
-                // Chuyển tọa độ tỷ lệ (0-1) thành pixel thực tế
                 const x1 = leftEye.x * canvasElement.width;
                 const y1 = leftEye.y * canvasElement.height;
                 const x2 = rightEye.x * canvasElement.width;
                 const y2 = rightEye.y * canvasElement.height;
 
-                // Tính toán khoảng cách giữa 2 mắt
+                // Tọa độ đỉnh trán
+                const hX = forehead.x * canvasElement.width;
+                const hY = forehead.y * canvasElement.height;
+
                 const eyeDistance = Math.hypot(x2 - x1, y2 - y1);
-                
-                // Tính độ lớn của kính (Thường rộng gấp 2 đến 2.5 lần khoảng cách 2 đuôi mắt)
-                const glassesWidth = eyeDistance * 2.3; 
-                const glassesHeight = stickerImg.height * (glassesWidth / stickerImg.width);
-
-                // Tìm điểm trung tâm giữa 2 mắt
-                const centerX = (x1 + x2) / 2;
-                const centerY = (y1 + y2) / 2;
-
-                // Tính góc nghiêng của đầu để xoay kính (Hàm lượng giác arctan2)
                 const angle = Math.atan2(y2 - y1, x2 - x1);
 
-                // Dịch chuyển đến điểm giữa 2 mắt, xoay canvas và vẽ kính lên
-                canvasCtx.translate(centerX, centerY);
+                // Tính độ lớn của mũ (Khoảng 3.2 lần khoảng cách 2 mắt)
+                const hatWidth = eyeDistance * 3.2; 
+                const hatHeight = stickerImg.height * (hatWidth / stickerImg.width);
+
+                // Dịch tâm vẽ đến đỉnh trán và xoay
+                canvasCtx.translate(hX, hY);
                 canvasCtx.rotate(angle);
-                // Vẽ kính (lùi lại một nửa chiều rộng/cao để kính nằm đúng tâm)
-                canvasCtx.drawImage(stickerImg, -glassesWidth / 2, -glassesHeight / 2, glassesWidth, glassesHeight);
+                
+                // Vẽ mũ: Lùi Y lên trên một đoạn bằng 90% chiều cao mũ (-hatHeight * 0.9) để mũ đội vừa đầu
+                canvasCtx.drawImage(stickerImg, -hatWidth / 2, -hatHeight * 0.9, hatWidth, hatHeight);
             }
             canvasCtx.restore();
         }
 
-        // Khởi tạo AI FaceMesh
         const faceMesh = new FaceMesh({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
         }});
         
         faceMesh.setOptions({
-            maxNumFaces: 1,           // Chỉ nhận diện 1 khuôn mặt cho nhẹ máy
-            refineLandmarks: true,    // Bắt nét chính xác mắt và môi
+            maxNumFaces: 1,
+            refineLandmarks: true,
             minDetectionConfidence: 0.6,
             minTrackingConfidence: 0.6
         });
         
-        // Gắn hàm xử lý kết quả
         faceMesh.onResults(onResults);
 
-        // Kích hoạt Camera và gửi khung hình liên tục cho AI xử lý
         const camera = new Camera(videoElement, {
             onFrame: async () => {
                 await faceMesh.send({image: videoElement});
