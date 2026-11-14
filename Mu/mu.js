@@ -2,7 +2,11 @@
 
 const hatsList = [
     { id: 'm1', src: 'Mu/mu1.png' },
-    { id: 'm2', src: 'Mu/mu2.png' } 
+    { id: 'm2', src: 'Mu/mu2.png' },
+    { id: 'm3', src: 'Mu/mu3.png' },
+    { id: 'm4', src: 'Mu/mu4.png' },
+    { id: 'm5', src: 'Mu/mu5.png' },
+    { id: 'm6', src: 'Mu/mu6.png' }
 ];
 
 function renderHatsPanel(containerId) {
