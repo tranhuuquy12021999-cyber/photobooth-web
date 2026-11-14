@@ -1,134 +1,5 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chụp 3 Ảnh - HQ-Photo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css"> 
-    
-    <!-- THƯ VIỆN AI GOOGLE -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-</head>
-<body class="bg-pink-50 min-h-screen font-sans flex flex-col pb-10">
-
-    <div class="flex justify-between items-center p-4 mb-2">
-        <button onclick="goBack()" class="text-gray-500 hover:text-pink-500 font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm transition">← Quay lại</button>
-        <div class="text-right"><h1 class="text-2xl text-pink-400 logo-font">HQ-Photo</h1></div>
-    </div>
-
-    <!-- MÀN HÌNH 1: CAMERA -->
-    <div id="mainCameraArea" class="flex flex-col items-center w-full">
-        <div class="px-4 flex justify-center w-full relative">
-            <div class="camera-container relative bg-gray-200">
-                <video id="camera" class="absolute inset-0 w-full h-full object-cover opacity-0" autoplay playsinline muted></video>
-                <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300"></canvas>
-
-                <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
-                </button>
-
-                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-300 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow">
-                    Đã Chụp <span id="shootCount">0</span>/3
-                </div>
-                <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30"></div>
-                
-                <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div>
-                    <span class="text-xs text-pink-500 font-bold mt-2">AI đang khởi động...</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex justify-center items-center gap-6 mt-6 w-full max-w-sm mx-auto">
-            <button onclick="captureManual()" class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center text-pink-400 shadow-inner font-medium text-[10px] flex-col active:scale-95 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
-                Tay
-            </button>
-            <button onclick="startAutoCapture()" class="w-20 h-20 bg-pink-400 rounded-full flex flex-col items-center justify-center text-white font-bold shadow-lg border-4 border-white active:scale-95 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
-                <span class="text-[9px] tracking-wider">AUTO</span>
-            </button>
-            <select id="countdownSelect" class="bg-white border border-pink-200 rounded px-2 py-1 outline-none text-gray-700 text-xs font-bold shadow-sm"><option value="3">3s</option><option value="5">5s</option></select>
-        </div>
-
-        <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
-        <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
-        <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
-    </div>
-
-    <!-- MÀN HÌNH 2 & 3 -->
-    <div id="frameSelectionArea" class="hidden flex-col items-center w-full mt-4 px-4">
-        <h2 class="text-xl font-bold text-pink-500 mb-2">Chọn khung áp dụng</h2>
-        <div class="grid grid-cols-2 gap-4 w-full max-w-sm" id="availableFramesGrid"></div>
-    </div>
-
-    <div id="resultArea" class="hidden flex-col items-center w-full mt-6 px-4">
-        <h2 class="text-xl font-bold text-pink-500 mb-6">Thành quả của bạn! 🎉</h2>
-        <canvas id="resultCanvas" class="w-full max-w-[360px] shadow-2xl rounded-md bg-white"></canvas>
-        <button onclick="downloadImage()" class="mt-6 w-full max-w-[360px] py-4 bg-pink-500 text-white rounded-xl font-bold shadow-lg active:scale-95 transition text-lg">⬇ Lưu Ảnh Về Máy</button>
-        <div class="flex gap-4 w-full max-w-[360px] mt-4">
-            <button onclick="goBack()" class="flex-1 bg-white text-pink-500 border border-pink-200 py-3 rounded-xl font-bold active:scale-95 transition text-sm">Đổi khung khác</button>
-            <button onclick="location.href='index.html'" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold active:scale-95 transition text-sm">Về trang chủ</button>
-        </div>
-    </div>
-
-    <!-- NHÚNG MODULES BỘ LỌC (LƯU Ý TRÌNH TỰ NÀY) -->
-    <script src="boloc/core_boloc.js"></script> 
-    <script src="boloc/mac_dinh.js"></script> 
-    <script src="boloc/trang_hong.js"></script> 
-
-    <!-- NHÚNG PHỤ KIỆN VÀ KHUNG -->
-    <script src="Kinh/kinh.js"></script> 
-    <script src="Mu/mu.js"></script> 
-    <script>var ALL_FRAMES = [];</script>
-    <script src="style3/khung_cucxanh.js"></script> 
-    <script src="style3/khung_gty.js"></script>
-    <script src="style3/khung_kt_team.js"></script>
-    <script src="style3/khung_kn_team.js"></script>
-
-    <!-- LOGIC AR VÀ XỬ LÝ -->
-    <script>
-        // QUẢN LÝ PHỤ KIỆN
-        let currentAccessoryType = 'none';
-        let currentAccessorySrc = null;
-        const accessoryImgElement = new Image();
-
-        function selectAccessory(type, src, btnElement) {
-            currentAccessoryType = type;
-            if (src) { currentAccessorySrc = src; accessoryImgElement.src = src; } 
-            else { currentAccessorySrc = null; }
-            
-            document.querySelectorAll('.acc-btn').forEach(btn => {
-                btn.classList.remove('border-pink-400');
-                btn.classList.add('border-transparent');
-            });
-            btnElement.classList.remove('border-transparent');
-            btnElement.classList.add('border-pink-400');
-        }
-
-        renderFilterPanel('filterPanelContainer');
-        renderGlassesPanel('glassesContainer');
-        renderHatsPanel('hatsContainer');
-
-        const video = document.getElementById('camera');
-        const arCanvas = document.getElementById('arCanvas');
-        const arCtx = arCanvas.getContext('2d');
-        const canvas = document.getElementById('resultCanvas');
-        const ctx = canvas.getContext('2d');
-        const aiLoader = document.getElementById('aiLoader');
-        
-        const mainCameraArea = document.getElementById('mainCameraArea');
-        const frameSelectionArea = document.getElementById('frameSelectionArea');
-        const resultArea = document.getElementById('resultArea');
-        
-        let rawImages = [], isProcessing = false;
-        let useFrontCamera = true;
-        let aiCameraInstance = null;
-
-        // =====================================
-        // TRÁI TIM CỦA ỨNG DỤNG: AI BEAUTY & AR
+// =====================================
+        // TRÁI TIM CỦA ỨNG DỤNG: AI BEAUTY MASKING
         // =====================================
         function onResultsFaceMesh(results) {
             if(aiLoader) {
@@ -140,9 +11,9 @@
             arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            // BƯỚC 1: XỬ LÝ MÀU NỀN THEO BỘ LỌC (ĐỌC TỪ OBjECT currentActiveFilter)
+            // BƯỚC 1: VẼ LỚP NỀN (CẢNH VẬT)
             arCtx.save();
-            arCtx.filter = currentActiveFilter ? currentActiveFilter.cssFilter : 'none';
+            arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
             arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
             arCtx.restore();
 
@@ -150,7 +21,50 @@
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
                 
-                // TÔ MÔI ĐỎ NẾU BỘ LỌC ĐANG CHỌN CHO PHÉP
+                // LÀM TRẮNG MỊN CHỈ VÙNG MẶT BẰNG MẶT NẠ (MASK)
+                if (currentActiveFilter && currentActiveFilter.faceFilter) {
+                    // Tạo một Canvas ẩn tạm thời để xử lý mặt nạ
+                    if (!window.faceMaskCanvas) {
+                        window.faceMaskCanvas = document.createElement('canvas');
+                        window.faceMaskCtx = window.faceMaskCanvas.getContext('2d');
+                    }
+                    const fmCanvas = window.faceMaskCanvas;
+                    const fmCtx = window.faceMaskCtx;
+                    fmCanvas.width = arCanvas.width;
+                    fmCanvas.height = arCanvas.height;
+
+                    // Vẽ ảnh đã qua bộ lọc Trắng Mịn lên Canvas tạm
+                    fmCtx.save();
+                    fmCtx.filter = currentActiveFilter.faceFilter;
+                    fmCtx.drawImage(results.image, 0, 0, fmCanvas.width, fmCanvas.height);
+                    fmCtx.restore();
+
+                    // Cắt lấy đúng vùng mặt: Tọa độ 36 điểm viền ngoài cùng khuôn mặt của Face Mesh
+                    fmCtx.globalCompositeOperation = 'destination-in';
+                    const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
+                    
+                    fmCtx.beginPath();
+                    FACE_OVAL.forEach((index, i) => {
+                        const pt = landmarks[index];
+                        const x = pt.x * fmCanvas.width;
+                        const y = pt.y * fmCanvas.height;
+                        if (i === 0) fmCtx.moveTo(x, y);
+                        else fmCtx.lineTo(x, y);
+                    });
+                    fmCtx.closePath();
+                    
+                    // Tạo hiệu ứng viền mờ (Feather) để vùng da cổ và mặt không bị gắt
+                    fmCtx.shadowColor = 'black';
+                    fmCtx.shadowBlur = 20; 
+                    fmCtx.fillStyle = 'black';
+                    fmCtx.fill();
+                    fmCtx.fill(); // Tô 2 lần để lõi giữa mặt đặc lại, giữ viền mờ
+
+                    // In lớp mặt nạ làm trắng này đè lên ảnh gốc trên màn hình chính
+                    arCtx.drawImage(fmCanvas, 0, 0);
+                }
+
+                // TÔ MÔI ĐỎ
                 if (currentActiveFilter && currentActiveFilter.hasLipstick) {
                     arCtx.save();
                     const lipIndices = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
@@ -195,121 +109,3 @@
                 }
             }
         }
-
-        const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
-        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-        faceMesh.onResults(onResultsFaceMesh);
-
-        function startCamera() {
-            if (aiCameraInstance) aiCameraInstance.stop();
-            arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
-            aiCameraInstance = new Camera(video, {
-                onFrame: async () => { await faceMesh.send({image: video}); },
-                width: 480, height: 640, 
-                facingMode: useFrontCamera ? "user" : "environment"
-            });
-            aiCameraInstance.start();
-        }
-
-        function switchCamera() {
-            useFrontCamera = !useFrontCamera;
-            if(aiLoader) { aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; }
-            startCamera();
-        }
-
-        startCamera();
-
-        // =====================================
-        // ĐIỀU HƯỚNG & CHỤP ẢNH TỐI ƯU
-        // =====================================
-        function goBack() {
-            if (!resultArea.classList.contains('hidden')) {
-                resultArea.classList.add('hidden'); resultArea.classList.remove('flex');
-                frameSelectionArea.classList.remove('hidden'); frameSelectionArea.classList.add('flex');
-                window.scrollTo({ top: 0, behavior: 'smooth' }); return;
-            }
-            if (!frameSelectionArea.classList.contains('hidden')) {
-                frameSelectionArea.classList.add('hidden'); frameSelectionArea.classList.remove('flex');
-                rawImages = []; document.getElementById('shootCount').innerText = '0';
-                mainCameraArea.classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' }); return;
-            }
-            window.location.href = 'index.html';
-        }
-
-        function takeSnapshot() {
-            const tempCanvas = document.createElement('canvas'); 
-            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
-            const tCtx = tempCanvas.getContext('2d');
-            
-            tCtx.save();
-            if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
-            tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-            tCtx.restore();
-
-            rawImages.push(tempCanvas); 
-            document.getElementById('shootCount').innerText = rawImages.length;
-        }
-
-        async function captureManual() {
-            if(rawImages.length >= 3 || isProcessing) return;
-            await countdownTimer(1); takeSnapshot();
-            if(rawImages.length === 3) showFrameSelection();
-        }
-
-        async function startAutoCapture() {
-            if(isProcessing) return; isProcessing = true; rawImages = []; document.getElementById('shootCount').innerText = '0';
-            const val = parseInt(document.getElementById('countdownSelect').value);
-            for(let i=0; i<3; i++) { await countdownTimer(val); takeSnapshot(); }
-            isProcessing = false; showFrameSelection();
-        }
-
-        function countdownTimer(sec) {
-            return new Promise(res => {
-                const el = document.getElementById('countdown'); el.classList.remove('hidden'); let count = sec; el.innerText = count;
-                const intv = setInterval(() => { count--; if(count>0) el.innerText = count; else { clearInterval(intv); el.classList.add('hidden'); res(); } }, 1000);
-            });
-        }
-
-        function showFrameSelection() {
-            mainCameraArea.classList.add('hidden');
-            const grid = document.getElementById('availableFramesGrid'); grid.innerHTML = '';
-            
-            ALL_FRAMES.filter(f => f.type === 3).forEach(frame => {
-                const div = document.createElement('div');
-                div.className = `flex flex-col bg-white p-2 rounded-xl shadow-sm border border-pink-100 cursor-pointer active:scale-95 transition`;
-                div.onclick = () => processFinalImage(frame);
-                div.innerHTML = `<img src="${frame.src}" class="w-full aspect-[1/3] object-cover rounded-lg mb-2 bg-gray-100"><span class="text-xs font-bold text-center w-full truncate">${frame.name}</span>`;
-                grid.appendChild(div);
-            });
-            frameSelectionArea.classList.remove('hidden'); frameSelectionArea.classList.add('flex');
-        }
-
-        async function processFinalImage(frameConfig) {
-            frameSelectionArea.classList.add('hidden'); frameSelectionArea.classList.remove('flex');
-            resultArea.classList.remove('hidden'); resultArea.classList.add('flex');
-            
-            const layout = frameConfig.layout; canvas.width = layout.canvasW; canvas.height = layout.canvasH; 
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            rawImages.forEach((img, idx) => {
-                const slot = layout.photos[idx]; if(!slot) return;
-                const srcW = (img.width/img.height < slot.w/slot.h) ? img.width : img.height * (slot.w/slot.h);
-                const srcH = (img.width/img.height < slot.w/slot.h) ? img.width / (slot.w/slot.h) : img.height;
-                const srcX = (img.width - srcW)/2, srcY = (img.height - srcH)/2;
-                
-                ctx.save(); ctx.translate(slot.x + slot.w/2, slot.y + slot.h/2); if(slot.angle) ctx.rotate(slot.angle * Math.PI/180);
-                ctx.drawImage(img, srcX, srcY, srcW, srcH, -slot.w/2, -slot.h/2, slot.w, slot.h); ctx.restore();
-            });
-
-            await new Promise(res => {
-                const frameImg = new Image(); frameImg.onload = () => { ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height); res(); };
-                frameImg.onerror = () => res(); frameImg.src = frameConfig.src;
-            });
-            resultArea.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function downloadImage() { const link = document.createElement('a'); link.download = `HQ_Photo_${Date.now()}.png`; link.href = canvas.toDataURL('image/png', 1.0); link.click(); }
-    </script>
-</body>
-</html>
