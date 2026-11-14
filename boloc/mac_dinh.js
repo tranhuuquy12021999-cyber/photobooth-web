@@ -6,7 +6,8 @@ ALL_FILTERS.push({
     id: 'macdinh',
     name: 'Mặc định',
     icon: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-    cssFilter: 'brightness(1.05)', // Sáng nhẹ
-    hasLipstick: false,            // Không tô môi
+    baseFilter: 'brightness(1.02)', // Cảnh vật sáng nhẹ tự nhiên
+    faceFilter: null,               // Không can thiệp riêng mặt
+    hasLipstick: false,
     lipstickColor: null
 });
