@@ -46,15 +46,14 @@
     <!-- ==============================================
          MÀN HÌNH 1: LỜI CHÀO Ý NGHĨA
          ============================================== -->
-    <div id="step-welcome" class="step-section active flex-col items-center justify-center flex-1 px-6 pt-6 pb-12 z-10 relative">
-        <div class="w-24 h-24 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 shadow-xl shadow-pink-200/50 border border-pink-100">
-            <img src="https://img.icons8.com/external-flat-icons-inmotus-design/64/external-Camera-pink-flat-icons-inmotus-design.png" alt="Camera Icon" class="w-14 h-14 drop-shadow-md">
-        </div>
+    <div id="step-welcome" class="step-section active flex-col items-center justify-center flex-1 px-6 pt-2 pb-10 z-10 relative">
         
-        <h2 class="text-2xl font-bold text-pink-600 mb-2 text-center">Trạm ảnh thanh xuân</h2>
+        <!-- Đã xóa khối icon camera bị lỗi ở đây -->
+        
+        <h2 class="text-2xl font-bold text-pink-600 mb-2 text-center mt-4">Trạm ảnh thanh xuân</h2>
         <h2 class="text-4xl font-bold text-pink-400 logo-font mb-6 text-center drop-shadow-sm">HQ-Photo</h2>
         
-        <div class="bg-white/60 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-white mb-10 max-w-sm relative">
+        <div class="bg-white/60 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-white mb-8 max-w-sm relative">
             <div class="absolute -top-3 -left-3 text-3xl opacity-50">✨</div>
             <p class="text-gray-700 text-sm leading-relaxed text-center font-medium italic">
                 "Thời gian trôi đi, nhưng những kỷ niệm đẹp sẽ luôn còn mãi. HQ-Photo được tạo ra để giúp bạn gói ghém lại những nụ cười rạng rỡ, những cái ôm ấm áp và những khoảnh khắc tuyệt vời nhất bên những người thân yêu. <br><br>
@@ -63,7 +62,7 @@
             <div class="absolute -bottom-3 -right-3 text-3xl opacity-50">📸</div>
         </div>
 
-        <button onclick="showFrameSelection()" class="w-full max-w-[280px] bg-pink-500 hover:bg-pink-600 text-white font-bold text-lg py-4 rounded-full shadow-[0_8px_20px_rgba(236,72,153,0.4)] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+        <button onclick="showFrameSelection()" class="w-full max-w-[280px] bg-pink-500 hover:bg-pink-600 text-white font-bold text-lg py-4 rounded-full shadow-[0_8px_20px_rgba(236,72,153,0.4)] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 mt-auto mb-4">
             Tiếp tục
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
         </button>
@@ -121,49 +120,41 @@
 
     <!-- TẠO MƯA TRÁI TIM & ĐIỀU HƯỚNG -->
     <script>
-        // Chuyển sang màn chọn khung
         function showFrameSelection() {
             document.getElementById('step-welcome').classList.remove('active');
             document.getElementById('step-selection').classList.add('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Quay lại màn lời chào
         function backToWelcome() {
             document.getElementById('step-selection').classList.remove('active');
             document.getElementById('step-welcome').classList.add('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Dẫn link sang trang chụp ảnh
         function goToCamera() {
             const selectedType = document.querySelector('input[name="photoType"]:checked').value;
             window.location.href = selectedType + 'khung.html';
         }
 
-        // Hệ thống tạo mưa trái tim
         function createHeart() {
             const heart = document.createElement('div');
             heart.classList.add('heart-particle');
             
-            // Random kí tự trái tim hoặc ngôi sao
             const shapes = ['❤', '♥', '✨', '💕'];
             heart.innerText = shapes[Math.floor(Math.random() * shapes.length)];
             
-            // Random vị trí xuất phát, kích thước và tốc độ rơi
             heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.animationDuration = Math.random() * 3 + 4 + 's'; // Rơi từ 4-7 giây
-            heart.style.fontSize = Math.random() * 12 + 10 + 'px'; // Kích thước từ 10-22px
+            heart.style.animationDuration = Math.random() * 3 + 4 + 's'; 
+            heart.style.fontSize = Math.random() * 12 + 10 + 'px'; 
             
             document.body.appendChild(heart);
             
-            // Xóa trái tim khỏi DOM sau khi rơi xong để không làm nặng máy
             setTimeout(() => {
                 heart.remove();
             }, 7000);
         }
 
-        // Cứ mỗi 400ms tạo ra 1 trái tim mới
         setInterval(createHeart, 400);
     </script>
 </body>
