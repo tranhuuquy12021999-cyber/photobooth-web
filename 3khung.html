@@ -5,15 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chụp 3 Ảnh - HQ-Photo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css"> <!-- GỌI CSS CHUNG -->
+    <link rel="stylesheet" href="style.css"> 
     
-    <!-- THÊM THƯ VIỆN AI GOOGLE ĐỂ NHẬN DIỆN KHUÔN MẶT -->
+    <!-- THƯ VIỆN AI GOOGLE -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body class="bg-pink-50 min-h-screen font-sans flex flex-col pb-10">
 
-    <!-- HEADER VỚI NÚT QUAY LẠI THÔNG MINH -->
     <div class="flex justify-between items-center p-4 mb-2">
         <button onclick="goBack()" class="text-gray-500 hover:text-pink-500 font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm transition">← Quay lại</button>
         <div class="text-right"><h1 class="text-2xl text-pink-400 logo-font">HQ-Photo</h1></div>
@@ -23,9 +22,7 @@
     <div id="mainCameraArea" class="flex flex-col items-center w-full">
         <div class="px-4 flex justify-center w-full relative">
             <div class="camera-container relative">
-                <!-- Video gốc -->
                 <video id="camera" class="filter-normal absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);" autoplay playsinline muted></video>
-                <!-- Canvas AI đè lên video để vẽ phụ kiện Kính/Mũ -->
                 <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover" style="transform: scaleX(-1);"></canvas>
 
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-300 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow">
@@ -33,7 +30,6 @@
                 </div>
                 <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30"></div>
                 
-                <!-- Loader hiển thị khi AI đang khởi động -->
                 <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div>
                     <span class="text-xs text-pink-500 font-bold">AI đang khởi động...</span>
@@ -53,44 +49,69 @@
             <select id="countdownSelect" class="bg-white border border-pink-200 rounded px-2 py-1 outline-none text-gray-700 text-xs font-bold shadow-sm"><option value="3">3s</option><option value="5">5s</option></select>
         </div>
 
-        <div id="filterPanelContainer"></div> <!-- NƠI CHỨA BỘ LỌC TỪ JS -->
-        <div id="accessoryPanelContainer"></div> <!-- NƠI CHỨA PHỤ KIỆN KÍNH/MŨ TỪ JS -->
+        <div id="filterPanelContainer" class="w-full"></div> 
+        
+        <!-- NƠI CHỨA CÁC MODULE PHỤ KIỆN -->
+        <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
+        <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
 
-    <!-- MÀN HÌNH 2: CHỌN KHUNG SAU KHI CHỤP -->
+    <!-- MÀN HÌNH 2 & 3: CHỌN KHUNG VÀ KẾT QUẢ -->
     <div id="frameSelectionArea" class="hidden flex-col items-center w-full mt-4 px-4">
         <h2 class="text-xl font-bold text-pink-500 mb-2">Chọn khung áp dụng</h2>
-        <p class="text-xs text-gray-500 mb-4 text-center">Các khung dưới đây được thiết kế dành cho 3 ảnh bạn vừa chụp.</p>
         <div class="grid grid-cols-2 gap-4 w-full max-w-sm" id="availableFramesGrid"></div>
     </div>
 
-    <!-- MÀN HÌNH 3: KẾT QUẢ -->
     <div id="resultArea" class="hidden flex-col items-center w-full mt-6 px-4">
         <h2 class="text-xl font-bold text-pink-500 mb-6">Thành quả của bạn! 🎉</h2>
         <canvas id="resultCanvas" class="w-full max-w-[360px] shadow-2xl rounded-md bg-white"></canvas>
         <button onclick="downloadImage()" class="mt-6 w-full max-w-[360px] py-4 bg-pink-500 text-white rounded-xl font-bold shadow-lg active:scale-95 transition text-lg">⬇ Lưu Ảnh Về Máy</button>
-        
         <div class="flex gap-4 w-full max-w-[360px] mt-4">
             <button onclick="goBack()" class="flex-1 bg-white text-pink-500 border border-pink-200 py-3 rounded-xl font-bold active:scale-95 transition text-sm">Đổi khung khác</button>
             <button onclick="location.href='index.html'" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold active:scale-95 transition text-sm">Về trang chủ</button>
         </div>
     </div>
 
-    <!-- NHÚNG CÁC SCRIPT -->
+    <!-- NHÚNG CÁC SCRIPT (Bao gồm file Kính và Mũ đã tách riêng) -->
     <script src="filters.js"></script> 
-    <script src="Kinh/accessories.js"></script> <!-- GỌI FILE CODE PHỤ KIỆN -->
+    <script src="Kinh/kinh.js"></script> 
+    <script src="Mu/mu.js"></script> 
+    
     <script>var ALL_FRAMES = [];</script>
     <script src="style3/khung_cucxanh.js"></script> 
     <script src="style3/khung_gty.js"></script>
     <script src="style3/khung_kt_team.js"></script>
     <script src="style3/khung_kn_team.js"></script>
-    <!-- <script src="style3/khung_3anhkhac.js"></script> -->
 
-    <!-- LOGIC ỨNG DỤNG -->
+    <!-- LOGIC AR VÀ XỬ LÝ CHỤP -->
     <script>
-        // Khởi tạo các thanh công cụ vuốt
+        // TRẠNG THÁI PHỤ KIỆN
+        let currentAccessoryType = 'none';
+        let currentAccessorySrc = null;
+        const accessoryImgElement = new Image();
+
+        // Hàm xử lý khi bấm chọn phụ kiện từ bất kỳ file nào (kinh.js hoặc mu.js)
+        function selectAccessory(type, src, btnElement) {
+            currentAccessoryType = type;
+            if (src) {
+                currentAccessorySrc = src;
+                accessoryImgElement.src = src;
+            } else {
+                currentAccessorySrc = null;
+            }
+            
+            document.querySelectorAll('.acc-btn').forEach(btn => {
+                btn.classList.remove('border-pink-400');
+                btn.classList.add('border-transparent');
+            });
+            btnElement.classList.remove('border-transparent');
+            btnElement.classList.add('border-pink-400');
+        }
+
+        // KÍCH HOẠT HIỂN THỊ GIAO DIỆN
         renderFilterPanel('filterPanelContainer');
-        renderAccessoryPanel('accessoryPanelContainer');
+        renderGlassesPanel('glassesContainer');
+        renderHatsPanel('hatsContainer');
 
         const video = document.getElementById('camera');
         const arCanvas = document.getElementById('arCanvas');
@@ -109,7 +130,6 @@
         // LOGIC AI NHẬN DIỆN KHUÔN MẶT
         // =====================================
         function onResultsFaceMesh(results) {
-            // Tắt Loader khi AI bắt đầu trả về khung hình
             if(aiLoader) {
                 aiLoader.style.opacity = '0';
                 setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300);
@@ -119,8 +139,7 @@
             arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            // Xử lý vẽ kính/mũ dựa theo lựa chọn trong biến currentAccessoryType (từ accessories.js)
-            if (typeof currentAccessoryType !== 'undefined' && currentAccessoryType !== 'none' && currentAccessorySrc && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            if (currentAccessoryType !== 'none' && currentAccessorySrc && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
                 const leftEye = landmarks[33]; 
                 const rightEye = landmarks[263];
@@ -157,7 +176,6 @@
         faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         faceMesh.onResults(onResultsFaceMesh);
 
-        // Thay thế navigator.mediaDevices cũ bằng AI Camera
         const aiCamera = new Camera(video, {
             onFrame: async () => { await faceMesh.send({image: video}); },
             width: 480, height: 640, facingMode: "user"
@@ -188,14 +206,12 @@
             const tempCanvas = document.createElement('canvas'); tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
             const tCtx = tempCanvas.getContext('2d');
             
-            // 1. Chụp video gốc + Filter
             tCtx.save();
             tCtx.filter = typeof activeFilterCSSString !== 'undefined' ? activeFilterCSSString : 'none'; 
             tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
             tCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
             tCtx.restore();
 
-            // 2. Vẽ đè layer Phụ kiện (nếu có) lên trên ảnh đã lật
             tCtx.save();
             tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1);
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
