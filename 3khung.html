@@ -29,7 +29,6 @@
 </head>
 <body class="bg-pink-50 min-h-screen font-sans flex flex-col pb-2 h-[100dvh]">
 
-    <!-- Đã giảm padding p-4 thành px-4 py-2 và xóa mb-1 để thu hẹp khoảng cách -->
     <div class="flex justify-between items-center px-4 py-2 flex-shrink-0">
         <button onclick="goBack()" class="text-gray-500 hover:text-pink-500 font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm transition">← Quay lại</button>
         <div class="text-right"><h1 class="text-2xl text-pink-400 logo-font">HQ-Photo</h1></div>
@@ -80,10 +79,8 @@
             </div>
         </div>
 
-        <!-- DANH SÁCH ẢNH THUMBNAIL MINI (Giảm margin trên xuống mt-2) -->
         <div id="thumbnailsContainer" class="flex justify-center gap-3 mt-2 mb-1 w-full max-w-sm px-4"></div>
 
-        <!-- CỤM NÚT CHỤP ẢNH (Giảm margin trên xuống mt-1) -->
         <div id="captureControls" class="flex justify-center items-center gap-6 mt-1 w-full max-w-sm mx-auto">
             <button onclick="captureManual()" class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center text-pink-400 shadow-inner font-medium text-[10px] flex-col active:scale-95 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
@@ -103,16 +100,17 @@
             </button>
         </div>
 
-        <!-- Các thanh phụ kiện đã thu hẹp khoảng cách qua CSS ở trên -->
         <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
 
     <!-- ==============================================
-         MÀN HÌNH 2: WORKSPACE CHỌN KHUNG GIAO DIỆN
+         MÀN HÌNH 2: WORKSPACE CHỌN KHUNG GIAO DIỆN (NÂNG CẤP TÌM KIẾM & PHÂN LOẠI)
          ============================================== -->
     <div id="workspaceArea" class="hidden w-full flex-1 px-3 flex-row gap-3 overflow-hidden">
+        
+        <!-- CỘT TRÁI: PREVIEW THÀNH QUẢ -->
         <div class="w-[48%] flex flex-col items-center h-full">
             <div class="bg-green-500 text-white text-[10px] font-bold py-1 px-3 rounded-full mb-2 flex items-center gap-1 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
@@ -127,9 +125,37 @@
             </button>
             <button onclick="goBack()" class="mt-2 w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-bold active:scale-95 transition text-sm">Chụp lại</button>
         </div>
+
+        <!-- CỘT PHẢI: LỌC & DANH SÁCH KHUNG -->
         <div class="w-[52%] flex flex-col h-full bg-white rounded-xl shadow-sm border border-pink-100 p-2 overflow-hidden">
-            <div class="text-pink-400 font-bold text-xs text-center mb-2 pb-2 border-b border-pink-50">Chọn Khung</div>
-            <div class="grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar h-full pb-10" id="availableFramesGrid"></div>
+            
+            <!-- HEADER CHỌN CHỦ ĐỀ VÀ TÌM KIẾM -->
+            <div class="flex flex-col gap-2 mb-2 pb-2 border-b border-pink-50">
+                <div class="flex justify-between items-center relative">
+                    <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap mr-1">Chọn Chủ Đề:</span>
+                    <select id="categorySelect" onchange="filterFrames()" class="w-full text-[10px] bg-pink-50 border border-pink-200 text-pink-600 rounded p-1 outline-none font-bold appearance-none">
+                        <option value="All">Tất cả</option>
+                        <option value="Tên Đơn Vị">Tên Đơn Vị</option>
+                        <option value="64 Tỉnh Thành">64 Tỉnh Thành</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                    <!-- Mũi tên giả cho select -->
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-pink-500">
+                        <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+                
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-1.5 pointer-events-none">
+                        <svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input type="text" id="searchInput" oninput="filterFrames()" placeholder="Tìm tên khung..." class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-[10px] rounded focus:ring-pink-300 focus:border-pink-300 block pl-6 p-1.5 outline-none placeholder-gray-400">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar h-full pb-10" id="availableFramesGrid">
+                <!-- Javascript sẽ in khung vào đây -->
+            </div>
         </div>
     </div>
 
@@ -140,14 +166,62 @@
     <script src="Kinh/kinh.js"></script> 
     <script src="Mu/mu.js"></script> 
     <script>var ALL_FRAMES = [];</script>
+    
+    <!-- CÁC FILE KHUNG CŨ CỦA BẠN -->
     <script src="style3/khung_cucxanh.js"></script> 
     <script src="style3/khung_gty.js"></script>
     <script src="style3/khung_kt_team.js"></script>
     <script src="style3/khung_kn_team.js"></script>
 
-    <!-- LOGIC ỨNG DỤNG CHÍNH -->
+    <!-- LOGIC ỨNG DỤNG CHÍNH VÀ CẤU HÌNH 64 TỈNH THÀNH -->
     <script>
-        // PHỤ KIỆN
+        // =====================================
+        // TIÊM CẤU HÌNH DANH MỤC VÀ KHUNG TỈNH THÀNH
+        // =====================================
+        // Phân loại các khung cũ hiện có trong ALL_FRAMES
+        ALL_FRAMES.forEach(f => {
+            if(f.name.toLowerCase().includes('kỹ thuật') || f.name.toLowerCase().includes('kiểm nghiệm')) {
+                f.category = 'Tên Đơn Vị';
+            } else {
+                f.category = 'Khác';
+            }
+        });
+
+        // Thiết lập cấu hình khung Phong Bì (64 Tỉnh Thành)
+        // Kích thước: 1200x3600 | 3 lỗ cắt: 1034x745, X:83. Y lỗ 1: 239. Khoảng cách: 97
+        // Y lỗ 2 = 239 + 745 + 97 = 1081
+        // Y lỗ 3 = 1081 + 745 + 97 = 1923
+        const layoutPhongBi = {
+            canvasW: 1200, canvasH: 3600,
+            photos: [
+                { x: 83, y: 239, w: 1034, h: 745 },
+                { x: 83, y: 1081, w: 1034, h: 745 },
+                { x: 83, y: 1923, w: 1034, h: 745 }
+            ]
+        };
+
+        // Thêm tỉnh Ninh Bình
+        ALL_FRAMES.push({
+            id: 'f_ninhbinh', type: 3, name: 'Ninh Bình', category: '64 Tỉnh Thành',
+            src: 'style3/khungphongbi.png',          // Frame gốc dùng chung
+            overlaySrc: 'style3/ninhbinh.png',       // Tem tỉnh thành dán đè lên
+            overlayPos: { x: 88, y: 2773, w: 1027, h: 741 }, // Vị trí dán tem tỉnh
+            layout: layoutPhongBi
+        });
+
+        // Thêm tỉnh Hà Nam
+        ALL_FRAMES.push({
+            id: 'f_hanam', type: 3, name: 'Hà Nam', category: '64 Tỉnh Thành',
+            src: 'style3/khungphongbi.png',
+            overlaySrc: 'style3/hanam.png',
+            overlayPos: { x: 88, y: 2773, w: 1027, h: 741 },
+            layout: layoutPhongBi
+        });
+
+
+        // =====================================
+        // LOGIC LÕI CỦA TRANG (AI, CAMERA, CHỤP ẢNH)
+        // =====================================
         let currentAccessoryType = 'none', currentAccessorySrc = null;
         const accessoryImgElement = new Image();
         function selectAccessory(type, src, btnElement) {
@@ -174,23 +248,15 @@
         
         let rawImages = [], isProcessing = false;
         let useFrontCamera = true, aiCameraInstance = null;
-        
-        // CÁC BIẾN CHO TÍNH NĂNG CHỤP LẠI
-        let viewingPhotoIndex = -1;
-        let retakingIndex = -1;
+        let viewingPhotoIndex = -1, retakingIndex = -1;
 
-        // =====================================
-        // TRÁI TIM CỦA ỨNG DỤNG: AI BEAUTY
-        // =====================================
         function onResultsFaceMesh(results) {
             if(aiLoader) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300); }
             arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            arCtx.save();
-            arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
-            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
-            arCtx.restore();
+            arCtx.save(); arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
+            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height); arCtx.restore();
 
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
@@ -249,81 +315,51 @@
         function switchCamera() { useFrontCamera = !useFrontCamera; if(aiLoader) { aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; } startCamera(); }
         startCamera();
 
-        // =====================================
-        // TÍNH NĂNG THUMBNAIL VÀ XEM TRƯỚC
-        // =====================================
         function updateThumbnails() {
-            const container = document.getElementById('thumbnailsContainer');
-            container.innerHTML = '';
+            const container = document.getElementById('thumbnailsContainer'); container.innerHTML = '';
             for (let i = 0; i < 3; i++) {
                 if (i < rawImages.length) {
                     const imgData = rawImages[i].toDataURL('image/jpeg', 0.8);
-                    container.innerHTML += `
-                        <div onclick="openPreview(${i})" class="w-14 h-[75px] bg-white border-2 border-pink-400 rounded-md shadow-sm overflow-hidden cursor-pointer active:scale-90 transition">
-                            <img src="${imgData}" class="w-full h-full object-cover">
-                        </div>
-                    `;
+                    container.innerHTML += `<div onclick="openPreview(${i})" class="w-14 h-[75px] bg-white border-2 border-pink-400 rounded-md shadow-sm overflow-hidden cursor-pointer active:scale-90 transition"><img src="${imgData}" class="w-full h-full object-cover"></div>`;
                 } else {
-                    container.innerHTML += `
-                        <div class="w-14 h-[75px] bg-pink-50/50 border border-pink-200 rounded-md shadow-inner flex items-center justify-center text-pink-300 text-xs font-bold">${i + 1}</div>
-                    `;
+                    container.innerHTML += `<div class="w-14 h-[75px] bg-pink-50/50 border border-pink-200 rounded-md shadow-inner flex items-center justify-center text-pink-300 text-xs font-bold">${i + 1}</div>`;
                 }
             }
         }
-        
         updateThumbnails();
 
         function openPreview(index) {
-            viewingPhotoIndex = index;
-            const modal = document.getElementById('previewModal');
+            viewingPhotoIndex = index; const modal = document.getElementById('previewModal');
             document.getElementById('previewImage').src = rawImages[index].toDataURL('image/jpeg', 0.9);
             document.getElementById('previewIndexLabel').innerText = index + 1;
-            modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => modal.classList.remove('opacity-0'), 10);
         }
-
         function closePreview() {
-            const modal = document.getElementById('previewModal');
-            modal.classList.add('opacity-0');
+            const modal = document.getElementById('previewModal'); modal.classList.add('opacity-0');
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
         async function retakeCurrentPhoto() {
-            retakingIndex = viewingPhotoIndex;
-            closePreview();
-            if(isProcessing) return;
-            isProcessing = true;
-            document.getElementById('proceedControls').classList.add('hidden');
-            document.getElementById('proceedControls').classList.remove('flex');
-            
-            await countdownTimer(3); 
-            takeSnapshot();
-            isProcessing = false;
-            checkReadyToProceed();
+            retakingIndex = viewingPhotoIndex; closePreview();
+            if(isProcessing) return; isProcessing = true;
+            document.getElementById('proceedControls').classList.add('hidden'); document.getElementById('proceedControls').classList.remove('flex');
+            await countdownTimer(3); takeSnapshot(); isProcessing = false; checkReadyToProceed();
         }
 
         function checkReadyToProceed() {
             if(rawImages.length >= 3 && retakingIndex === -1) {
-                document.getElementById('captureControls').classList.add('hidden');
-                document.getElementById('captureControls').classList.remove('flex');
-                document.getElementById('proceedControls').classList.remove('hidden');
-                document.getElementById('proceedControls').classList.add('flex');
+                document.getElementById('captureControls').classList.add('hidden'); document.getElementById('captureControls').classList.remove('flex');
+                document.getElementById('proceedControls').classList.remove('hidden'); document.getElementById('proceedControls').classList.add('flex');
             } else {
-                document.getElementById('captureControls').classList.remove('hidden');
-                document.getElementById('captureControls').classList.add('flex');
-                document.getElementById('proceedControls').classList.add('hidden');
-                document.getElementById('proceedControls').classList.remove('flex');
+                document.getElementById('captureControls').classList.remove('hidden'); document.getElementById('captureControls').classList.add('flex');
+                document.getElementById('proceedControls').classList.add('hidden'); document.getElementById('proceedControls').classList.remove('flex');
             }
         }
 
-        // =====================================
-        // ĐIỀU HƯỚNG & CHỤP ẢNH
-        // =====================================
         function goBack() {
             if (!workspaceArea.classList.contains('hidden')) {
                 workspaceArea.classList.add('hidden'); workspaceArea.classList.remove('flex');
-                rawImages = []; retakingIndex = -1;
-                document.getElementById('shootCount').innerText = '0';
+                rawImages = []; retakingIndex = -1; document.getElementById('shootCount').innerText = '0';
                 updateThumbnails(); checkReadyToProceed();
                 mainCameraArea.classList.remove('hidden'); mainCameraArea.classList.add('flex');
                 return;
@@ -332,42 +368,23 @@
         }
 
         function takeSnapshot() {
-            const tempCanvas = document.createElement('canvas'); 
-            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
             const tCtx = tempCanvas.getContext('2d');
-            
-            tCtx.save();
-            if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
-            tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
-            tCtx.restore();
+            tCtx.save(); if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
+            tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height); tCtx.restore();
 
-            if (retakingIndex !== -1) {
-                rawImages[retakingIndex] = tempCanvas;
-                retakingIndex = -1; 
-            } else {
-                rawImages.push(tempCanvas); 
-            }
+            if (retakingIndex !== -1) { rawImages[retakingIndex] = tempCanvas; retakingIndex = -1; } 
+            else { rawImages.push(tempCanvas); }
             
-            document.getElementById('shootCount').innerText = rawImages.length;
-            updateThumbnails();
+            document.getElementById('shootCount').innerText = rawImages.length; updateThumbnails();
         }
 
-        async function captureManual() {
-            if(isProcessing || (rawImages.length >= 3 && retakingIndex === -1)) return;
-            await countdownTimer(1); takeSnapshot();
-            checkReadyToProceed();
-        }
-
+        async function captureManual() { if(isProcessing || (rawImages.length >= 3 && retakingIndex === -1)) return; await countdownTimer(1); takeSnapshot(); checkReadyToProceed(); }
         async function startAutoCapture() {
             if(isProcessing) return; isProcessing = true; 
-            const remaining = 3 - rawImages.length;
-            const val = parseInt(document.getElementById('countdownSelect').value);
-            for(let i = 0; i < remaining; i++) { 
-                await countdownTimer(val); 
-                takeSnapshot(); 
-            }
-            isProcessing = false; 
-            checkReadyToProceed();
+            const remaining = 3 - rawImages.length, val = parseInt(document.getElementById('countdownSelect').value);
+            for(let i = 0; i < remaining; i++) { await countdownTimer(val); takeSnapshot(); }
+            isProcessing = false; checkReadyToProceed();
         }
 
         function countdownTimer(sec) {
@@ -378,14 +395,26 @@
         }
 
         // =====================================
-        // WORKSPACE CHỌN KHUNG
+        // WORKSPACE CHỌN KHUNG & LỌC CHỦ ĐỀ
         // =====================================
         function showWorkspace() {
             mainCameraArea.classList.add('hidden'); mainCameraArea.classList.remove('flex');
-            const grid = document.getElementById('availableFramesGrid'); grid.innerHTML = '';
+            workspaceArea.classList.remove('hidden'); workspaceArea.classList.add('flex');
+            filterFrames(); // Gọi hàm lọc để render lưới khung
+        }
+
+        function filterFrames() {
+            const category = document.getElementById('categorySelect').value;
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const grid = document.getElementById('availableFramesGrid'); 
+            grid.innerHTML = '';
             
-            const frames3 = ALL_FRAMES.filter(f => f.type === 3);
-            frames3.forEach((frame) => {
+            // Lọc khung theo Type (3), Danh mục và Tên
+            let filteredFrames = ALL_FRAMES.filter(f => f.type === 3);
+            if (category !== 'All') filteredFrames = filteredFrames.filter(f => f.category === category);
+            if (searchQuery !== '') filteredFrames = filteredFrames.filter(f => f.name.toLowerCase().includes(searchQuery));
+
+            filteredFrames.forEach((frame) => {
                 const div = document.createElement('div');
                 div.className = `frame-item flex flex-col items-center bg-gray-50 p-1 rounded-md border-2 border-transparent cursor-pointer transition`;
                 div.id = `frame_btn_${frame.id}`;
@@ -396,18 +425,27 @@
                     processFinalImage(frame);
                 };
                 
+                // Mẹo nhỏ: Hiển thị CSS chồng lớp (absolute) cho ảnh xem trước của lưới nếu khung đó có overlay (tỉnh thành)
+                let overlayHtml = '';
+                if(frame.overlaySrc) {
+                    const topPercent = (frame.overlayPos.y / frame.layout.canvasH) * 100;
+                    const leftPercent = (frame.overlayPos.x / frame.layout.canvasW) * 100;
+                    const wPercent = (frame.overlayPos.w / frame.layout.canvasW) * 100;
+                    const hPercent = (frame.overlayPos.h / frame.layout.canvasH) * 100;
+                    overlayHtml = `<img src="${frame.overlaySrc}" class="absolute z-20 object-contain" style="left: ${leftPercent}%; top: ${topPercent}%; width: ${wPercent}%; height: ${hPercent}%;">`;
+                }
+
                 div.innerHTML = `
-                    <img src="${frame.src}" class="w-full aspect-[1/3] object-contain rounded drop-shadow-sm mb-1">
+                    <div class="relative w-full aspect-[1/3] mb-1">
+                        <img src="${frame.src}" class="absolute inset-0 w-full h-full object-contain rounded drop-shadow-sm z-10">
+                        ${overlayHtml}
+                    </div>
                     <span class="text-[9px] font-bold text-gray-600 text-center w-full truncate leading-tight">${frame.name}</span>
                 `;
                 grid.appendChild(div);
             });
-            
-            workspaceArea.classList.remove('hidden'); workspaceArea.classList.add('flex');
-            
-            if(frames3.length > 0) {
-                document.getElementById(`frame_btn_${frames3[0].id}`).click();
-            }
+
+            if(filteredFrames.length > 0) document.getElementById(`frame_btn_${filteredFrames[0].id}`).click();
         }
 
         async function processFinalImage(frameConfig) {
@@ -415,6 +453,7 @@
             canvas.width = layout.canvasW; canvas.height = layout.canvasH; 
             ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // 1. Vẽ 3 ảnh selfie
             rawImages.forEach((img, idx) => {
                 const slot = layout.photos[idx]; if(!slot) return;
                 const srcW = (img.width/img.height < slot.w/slot.h) ? img.width : img.height * (slot.w/slot.h);
@@ -425,10 +464,24 @@
                 ctx.drawImage(img, srcX, srcY, srcW, srcH, -slot.w/2, -slot.h/2, slot.w, slot.h); ctx.restore();
             });
 
+            // 2. Vẽ khung nền (Base Frame)
             await new Promise(res => {
                 const frameImg = new Image(); frameImg.onload = () => { ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height); res(); };
                 frameImg.onerror = () => res(); frameImg.src = frameConfig.src;
             });
+
+            // 3. Vẽ dán đè Overlay (Tem Tỉnh Thành) nếu có
+            if (frameConfig.overlaySrc && frameConfig.overlayPos) {
+                await new Promise(res => {
+                    const overlayImg = new Image();
+                    overlayImg.onload = () => {
+                        ctx.drawImage(overlayImg, frameConfig.overlayPos.x, frameConfig.overlayPos.y, frameConfig.overlayPos.w, frameConfig.overlayPos.h);
+                        res();
+                    };
+                    overlayImg.onerror = () => res();
+                    overlayImg.src = frameConfig.overlaySrc;
+                });
+            }
         }
 
         function downloadImage() { const link = document.createElement('a'); link.download = `HQ_Photo_${Date.now()}.png`; link.href = canvas.toDataURL('image/png', 1.0); link.click(); }
