@@ -5,7 +5,7 @@ if (typeof ALL_FRAMES === 'undefined') {
 }
 
 ALL_FRAMES.push({ 
-    id: 'f_kt_team', 
+    id: 'f_kn_team', 
     type: 3, 
     name: 'Kiểm Nghiệm TEAM', 
     src: 'donvi/KN.png', // Hãy đảm bảo bạn đã tải file KT.png vào thư mục style3
