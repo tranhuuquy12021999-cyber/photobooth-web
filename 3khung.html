@@ -63,7 +63,7 @@
         <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
 
-    <!-- MÀN HÌNH 2: CHỌN KHUNG GIAO DIỆN TỪNG DÒNG RIÊNG BIỆT -->
+    <!-- MÀN HÌNH 2: CHỌN KHUNG GIAO DIỆN -->
     <div id="workspaceArea" class="hidden w-full flex-1 px-3 flex-row gap-3 overflow-hidden">
         
         <!-- CỘT TRÁI: PREVIEW -->
@@ -80,7 +80,6 @@
         <div class="w-[52%] flex flex-col h-full bg-white rounded-xl shadow-sm border border-pink-100 p-2 overflow-hidden">
             
             <div class="flex flex-col gap-2 mb-2 pb-2 border-b border-pink-50">
-                
                 <!-- Dòng 1: CHỦ ĐỀ -->
                 <div class="flex items-center w-full gap-2">
                     <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap w-[70px]">Chủ Đề:</span>
@@ -117,20 +116,22 @@
         </div>
     </div>
 
-    <!-- NHÚNG MODULES -->
+    <!-- NHÚNG MODULES CƠ BẢN -->
     <script src="boloc/core_boloc.js"></script> 
     <script src="boloc/mac_dinh.js"></script> 
     <script src="boloc/trang_hong.js"></script> 
     <script src="Kinh/kinh.js"></script> 
     <script src="Mu/mu.js"></script> 
+    
     <script>var ALL_FRAMES = [];</script>
+    
+    <!-- NHÚNG CÁC FILE KHUNG -->
     <script src="style3/khung_cucxanh.js"></script> 
     <script src="style3/khung_gty.js"></script>
     <script src="donvi/khung_kt_team.js"></script>
     <script src="donvi/khung_kn_team.js"></script>
     <script src="64tinh/tinh_thanh.js"></script>
 
-    <!-- LOGIC ỨNG DỤNG -->
     <script>
         const provSelect = document.getElementById('provinceSelect');
         if (typeof PROVINCES_DATA !== 'undefined') {
@@ -306,37 +307,42 @@
         function onCategoryChange() {
             const cat = document.getElementById('categorySelect').value;
             const provWrapper = document.getElementById('provinceWrapper');
-            // HIỆN Ô TỈNH THÀNH KHI CHỌN 64 TỈNH (Thêm class flex để nó hiển thị theo dòng)
             if (cat === '64 Tỉnh Thành') {
-                provWrapper.classList.remove('hidden');
-                provWrapper.classList.add('flex');
+                provWrapper.classList.remove('hidden'); provWrapper.classList.add('flex');
             } else {
-                provWrapper.classList.add('hidden');
-                provWrapper.classList.remove('flex');
+                provWrapper.classList.add('hidden'); provWrapper.classList.remove('flex');
             }
             filterFrames();
         }
 
+        // Đã đổi thành onProvinceChange sẽ gọi lại filterFrames(true) 
+        // để lưới cập nhật đúng ảnh thumbnail của tỉnh mới
         function onProvinceChange() {
-            if (currentSelectedFrame && currentSelectedFrame.category === '64 Tỉnh Thành') {
-                applyFrameAndRender(currentSelectedFrame);
-            }
+            filterFrames(true);
         }
 
-        function filterFrames() {
+        // Thêm tham số isProvinceChange để giữ lại vị trí Khung đang chọn
+        function filterFrames(isProvinceChange = false) {
             const category = document.getElementById('categorySelect').value;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             const selectedProvince = document.getElementById('provinceSelect').value;
             const grid = document.getElementById('availableFramesGrid'); 
+            
             grid.innerHTML = '';
             
             let filteredFrames = ALL_FRAMES.filter(f => f.type === 3);
             if (category !== 'All') {
                 filteredFrames = filteredFrames.filter(f => f.category === category);
             }
-            if (category === '64 Tỉnh Thành') {
-                filteredFrames = filteredFrames.filter(f => f.provId === selectedProvince);
-            }
+            
+            // Lọc CHỐNG SPAM: Dù ở Tất cả hay 64 Tỉnh, cũng chỉ hiện 1 bản duy nhất theo tỉnh đang chọn ở ô thả xuống
+            filteredFrames = filteredFrames.filter(f => {
+                if (f.category === '64 Tỉnh Thành') {
+                    return f.provId === selectedProvince;
+                }
+                return true;
+            });
+
             if (searchQuery !== '') {
                 filteredFrames = filteredFrames.filter(f => f.name.toLowerCase().includes(searchQuery));
             }
@@ -371,6 +377,15 @@
                 `;
                 grid.appendChild(div);
             });
+
+            // Giữ lại vị trí nếu đang chọn Giấy Báo mà bấm đổi Tỉnh
+            if (isProvinceChange && currentSelectedFrame) {
+                const matched = filteredFrames.find(f => f.name === currentSelectedFrame.name && f.category === currentSelectedFrame.category);
+                if (matched) {
+                    document.getElementById(`frame_btn_${matched.id}`).click();
+                    return;
+                }
+            }
 
             if(filteredFrames.length > 0) document.getElementById(`frame_btn_${filteredFrames[0].id}`).click();
         }
