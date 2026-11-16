@@ -25,10 +25,9 @@
         <div class="text-right"><h1 class="text-2xl text-pink-400 logo-font">HQ-Photo</h1></div>
     </div>
 
+    <!-- MODAL XEM TRƯỚC -->
     <div id="previewModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex-col items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-        <button onclick="closePreview()" class="absolute top-6 right-6 text-white bg-gray-800/60 rounded-full p-2 hover:bg-gray-700 active:scale-90 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
+        <button onclick="closePreview()" class="absolute top-6 right-6 text-white bg-gray-800/60 rounded-full p-2 hover:bg-gray-700 active:scale-90 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
         <div class="text-pink-400 font-bold mb-4">Xem trước ảnh <span id="previewIndexLabel">1</span></div>
         <img id="previewImage" class="max-h-[65vh] max-w-full rounded-xl shadow-2xl border-2 border-pink-400 mb-8 object-contain">
         <button onclick="retakeCurrentPhoto()" class="w-full max-w-xs bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 rounded-full shadow-[0_8px_20px_rgba(236,72,153,0.4)] active:scale-95 transition flex justify-center items-center gap-2">Chụp lại ảnh này</button>
@@ -40,9 +39,7 @@
             <div class="camera-container relative bg-gray-200 shadow-md">
                 <video id="camera" class="absolute inset-0 w-full h-full object-cover opacity-0" autoplay playsinline muted></video>
                 <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300"></canvas>
-                <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-                </button>
+                <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg></button>
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-400 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow border border-pink-300">Đã Chụp <span id="shootCount">0</span>/3</div>
                 <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30"></div>
                 <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div><span class="text-xs text-pink-500 font-bold mt-2">AI đang khởi động...</span></div>
@@ -66,7 +63,7 @@
         <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
     </div>
 
-    <!-- MÀN HÌNH 2: CHỌN KHUNG GIAO DIỆN -->
+    <!-- MÀN HÌNH 2: CHỌN KHUNG -->
     <div id="workspaceArea" class="hidden w-full flex-1 px-3 flex-row gap-3 overflow-hidden">
         
         <!-- CỘT TRÁI: PREVIEW -->
@@ -82,48 +79,47 @@
         <!-- CỘT PHẢI: LỌC & DANH SÁCH -->
         <div class="w-[52%] flex flex-col h-full bg-white rounded-xl shadow-sm border border-pink-100 p-2 overflow-hidden">
             
+            <!-- VÙNG TÌM KIẾM ĐƯỢC CHIA THÀNH TỪNG DÒNG -->
             <div class="flex flex-col gap-2 mb-2 pb-2 border-b border-pink-50">
                 
-                <!-- Hàng 1: CHỦ ĐỀ -->
-                <div class="flex items-center gap-2 w-full">
-                    <span class="text-pink-500 font-bold text-[9px] w-[50px] flex-shrink-0">Chủ Đề:</span>
+                <!-- Dòng 1: CHỦ ĐỀ -->
+                <div class="flex items-center w-full">
+                    <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap w-[75px]">Chủ Đề Khung:</span>
                     <div class="flex-1 relative">
-                        <select id="categorySelect" onchange="onCategoryChange()" class="w-full text-[9px] bg-pink-50 border border-pink-200 text-pink-600 rounded p-1 outline-none font-bold appearance-none">
+                        <select id="categorySelect" onchange="onCategoryChange()" class="w-full text-[10px] bg-pink-50 border border-pink-200 text-pink-600 rounded p-1 outline-none font-bold appearance-none">
                             <option value="All">Tất cả</option>
                             <option value="Tên Đơn Vị">Tên Đơn Vị</option>
                             <option value="64 Tỉnh Thành">64 Tỉnh Thành</option>
                             <option value="Khác">Khác</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-pink-500">
-                            <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                        </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-pink-500"><svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
                     </div>
                 </div>
 
-                <!-- Hàng 2: TỈNH THÀNH (Mặc định ẩn) -->
-                <div id="provinceWrapper" class="items-center gap-2 w-full hidden">
-                    <span class="text-pink-500 font-bold text-[9px] w-[50px] flex-shrink-0">Tỉnh:</span>
+                <!-- Dòng 2: TỈNH THÀNH (Mặc định ẩn) -->
+                <div id="provinceWrapper" class="items-center w-full hidden">
+                    <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap w-[75px]">Chọn Tỉnh:</span>
                     <div class="flex-1 relative">
-                        <select id="provinceSelect" onchange="onProvinceChange()" class="w-full text-[9px] bg-white border border-gray-200 text-gray-700 rounded p-1 outline-none font-bold appearance-none">
+                        <select id="provinceSelect" onchange="onProvinceChange()" class="w-full text-[10px] bg-white border border-gray-200 text-gray-700 rounded p-1 outline-none font-bold appearance-none">
                             <!-- JS tự điền danh sách -->
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
-                            <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                        </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
                     </div>
                 </div>
 
-                <!-- Tìm kiếm -->
+                <!-- Dòng 3: Tìm kiếm -->
                 <div class="relative w-full">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-1.5 pointer-events-none"><svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                    <input type="text" id="searchInput" oninput="filterFrames()" placeholder="Tìm khung..." class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-[10px] rounded focus:ring-pink-300 focus:border-pink-300 block pl-5 py-1 outline-none placeholder-gray-400">
+                    <input type="text" id="searchInput" oninput="filterFrames()" placeholder="Tìm khung..." class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-[10px] rounded focus:ring-pink-300 focus:border-pink-300 block pl-6 py-1 outline-none placeholder-gray-400">
                 </div>
             </div>
 
+            <!-- DANH SÁCH KHUNG -->
             <div class="grid grid-cols-2 gap-2 overflow-y-auto custom-scrollbar h-full pb-10" id="availableFramesGrid"></div>
         </div>
     </div>
 
+    <!-- NHÚNG MODULES CƠ BẢN -->
     <script src="boloc/core_boloc.js"></script> 
     <script src="boloc/mac_dinh.js"></script> 
     <script src="boloc/trang_hong.js"></script> 
@@ -132,6 +128,7 @@
     
     <script>var ALL_FRAMES = [];</script>
     
+    <!-- NHÚNG CÁC FILE KHUNG (Đã trỏ đúng thư mục donvi và 64tinh) -->
     <script src="style3/khung_cucxanh.js"></script> 
     <script src="style3/khung_gty.js"></script>
     <script src="donvi/khung_kt_team.js"></script>
@@ -139,6 +136,7 @@
     <script src="64tinh/tinh_thanh.js"></script>
 
     <script>
+        // INIT DROPDOWN TỈNH THÀNH (Đọc từ PROVINCES_DATA của file tinh_thanh.js)
         const provSelect = document.getElementById('provinceSelect');
         if (typeof PROVINCES_DATA !== 'undefined') {
             PROVINCES_DATA.forEach(p => {
@@ -297,10 +295,14 @@
             });
         }
 
+        // =====================================
+        // WORKSPACE CHỌN KHUNG TỐI ƯU
+        // =====================================
         function showWorkspace() {
             mainCameraArea.classList.add('hidden'); mainCameraArea.classList.remove('flex');
             workspaceArea.classList.remove('hidden'); workspaceArea.classList.add('flex');
             
+            // Tự động gán Category cho các khung cũ
             ALL_FRAMES.forEach(f => {
                 if (!f.category) {
                     if(f.name.toLowerCase().includes('kỹ thuật') || f.name.toLowerCase().includes('kiểm nghiệm')) f.category = 'Tên Đơn Vị';
@@ -313,6 +315,7 @@
         function onCategoryChange() {
             const cat = document.getElementById('categorySelect').value;
             const provWrapper = document.getElementById('provinceWrapper');
+            // HIỆN / ẨN Ô CHỌN TỈNH TRÊN 1 DÒNG RIÊNG
             if (cat === '64 Tỉnh Thành') {
                 provWrapper.classList.remove('hidden');
                 provWrapper.classList.add('flex');
@@ -332,12 +335,22 @@
         function filterFrames() {
             const category = document.getElementById('categorySelect').value;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const selectedProvince = document.getElementById('provinceSelect').value;
             const grid = document.getElementById('availableFramesGrid'); 
             grid.innerHTML = '';
             
             let filteredFrames = ALL_FRAMES.filter(f => f.type === 3);
-            if (category !== 'All') filteredFrames = filteredFrames.filter(f => f.category === category);
-            if (searchQuery !== '') filteredFrames = filteredFrames.filter(f => f.name.toLowerCase().includes(searchQuery));
+            if (category !== 'All') {
+                filteredFrames = filteredFrames.filter(f => f.category === category);
+            }
+            
+            if (category === '64 Tỉnh Thành') {
+                filteredFrames = filteredFrames.filter(f => f.provId === selectedProvince);
+            }
+
+            if (searchQuery !== '') {
+                filteredFrames = filteredFrames.filter(f => f.name.toLowerCase().includes(searchQuery));
+            }
 
             filteredFrames.forEach((frame) => {
                 const div = document.createElement('div');
@@ -351,9 +364,21 @@
                     applyFrameAndRender(frame);
                 };
                 
+                // Hiển thị khung mẫu trên lưới (có dán đè tem tỉnh)
+                let overlayHtml = '';
+                if(frame.overlaySrc) {
+                    const topPercent = (frame.overlayPos.y / frame.layout.canvasH) * 100;
+                    const leftPercent = (frame.overlayPos.x / frame.layout.canvasW) * 100;
+                    const wPercent = (frame.overlayPos.w / frame.layout.canvasW) * 100;
+                    const hPercent = (frame.overlayPos.h / frame.layout.canvasH) * 100;
+                    overlayHtml = `<img src="${frame.overlaySrc}" class="absolute z-20 object-contain" style="left: ${leftPercent}%; top: ${topPercent}%; width: ${wPercent}%; height: ${hPercent}%;">`;
+                }
+
+                // fallback onerror để biết nếu ảnh vẫn sai đường dẫn
                 div.innerHTML = `
                     <div class="relative w-full aspect-[1/3] mb-1">
-                        <img src="${frame.src}" class="absolute inset-0 w-full h-full object-contain rounded drop-shadow-sm z-10" onerror="this.src='https://via.placeholder.com/300x900?text=Loi+Anh'">
+                        <img src="${frame.src}" onerror="this.src='https://via.placeholder.com/300x900?text=Loi+Anh'" class="absolute inset-0 w-full h-full object-contain rounded drop-shadow-sm z-10">
+                        ${overlayHtml}
                     </div>
                     <span class="text-[9px] font-bold text-gray-600 text-center w-full truncate leading-tight">${frame.name}</span>
                 `;
@@ -363,6 +388,7 @@
             if(filteredFrames.length > 0) document.getElementById(`frame_btn_${filteredFrames[0].id}`).click();
         }
 
+        // HÀM VẼ GHÉP ẢNH TỈNH VÀO KHUNG VÀ VẼ LÊN CANVAS
         function applyFrameAndRender(frame) {
             let frameConfig = { ...frame }; 
             if (frameConfig.category === '64 Tỉnh Thành' && typeof PROVINCES_DATA !== 'undefined') {
