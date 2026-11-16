@@ -11,20 +11,32 @@ const layoutChungTinhThanh = {
     ]
 };
 
-// 1. CHỈ KHAI BÁO KHUNG TỔNG (Sẽ hiện trên danh sách bên phải)
-ALL_FRAMES.push({
-    id: 'f_pb', type: 3, name: 'Phong Bì', category: '64 Tỉnh Thành',
-    src: '64tinh/khungphongbi.png', layout: layoutChungTinhThanh
-});
-ALL_FRAMES.push({
-    id: 'f_gb', type: 3, name: 'Giấy Báo', category: '64 Tỉnh Thành',
-    src: '64tinh/giaybao.png', layout: layoutChungTinhThanh
-});
+// 1. CÁC KHUNG NỀN DÙNG CHUNG
+const baseFrames = [
+    { idPrefix: 'pb', namePrefix: 'Phong Bì', src: '64tinh/khungphongbi.png' },
+    { idPrefix: 'gb', namePrefix: 'Giấy Báo', src: '64tinh/giaybao.png' }
+];
 
-// 2. KHAI BÁO CÁC TEM TỈNH THÀNH (Dùng để ghép tự động vào ảnh bên trái)
+// 2. CÁC TEM TỈNH THÀNH (Đường dẫn chuẩn trỏ vào thư mục 64tinh)
 const PROVINCES_DATA = [
     { id: 'hanam', name: 'Hà Nam', overlaySrc: '64tinh/hanam.png' },
     { id: 'ninhbinh', name: 'Ninh Bình', overlaySrc: '64tinh/ninhbinh.png' },
     { id: 'hanoi', name: 'Hà Nội', overlaySrc: '64tinh/hanoi.png' }
-    // Thêm các tỉnh khác vào đây
 ];
+
+// 3. NHÂN BẢN TỰ ĐỘNG
+baseFrames.forEach(base => {
+    PROVINCES_DATA.forEach(prov => {
+        ALL_FRAMES.push({
+            id: `f_${base.idPrefix}_${prov.id}`, 
+            type: 3, 
+            provId: prov.id,
+            name: `${base.namePrefix}`, // Trên danh sách chỉ hiện "Phong Bì" hoặc "Giấy Báo"
+            category: '64 Tỉnh Thành',
+            src: base.src,
+            overlaySrc: prov.overlaySrc,
+            overlayPos: { x: 88, y: 2773, w: 1027, h: 741 }, 
+            layout: layoutChungTinhThanh
+        });
+    });
+});
