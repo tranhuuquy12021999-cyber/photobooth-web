@@ -79,8 +79,10 @@
             </div>
         </div>
 
+        <!-- DANH SÁCH ẢNH THUMBNAIL MINI -->
         <div id="thumbnailsContainer" class="flex justify-center gap-3 mt-2 mb-1 w-full max-w-sm px-4"></div>
 
+        <!-- CỤM NÚT CHỤP ẢNH -->
         <div id="captureControls" class="flex justify-center items-center gap-6 mt-1 w-full max-w-sm mx-auto">
             <button onclick="captureManual()" class="w-14 h-14 bg-pink-100 rounded-full flex items-center justify-center text-pink-400 shadow-inner font-medium text-[10px] flex-col active:scale-95 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
@@ -106,7 +108,7 @@
     </div>
 
     <!-- ==============================================
-         MÀN HÌNH 2: WORKSPACE CHỌN KHUNG GIAO DIỆN (NÂNG CẤP TÌM KIẾM & PHÂN LOẠI)
+         MÀN HÌNH 2: WORKSPACE CHỌN KHUNG GIAO DIỆN
          ============================================== -->
     <div id="workspaceArea" class="hidden w-full flex-1 px-3 flex-row gap-3 overflow-hidden">
         
@@ -129,7 +131,6 @@
         <!-- CỘT PHẢI: LỌC & DANH SÁCH KHUNG -->
         <div class="w-[52%] flex flex-col h-full bg-white rounded-xl shadow-sm border border-pink-100 p-2 overflow-hidden">
             
-            <!-- HEADER CHỌN CHỦ ĐỀ VÀ TÌM KIẾM -->
             <div class="flex flex-col gap-2 mb-2 pb-2 border-b border-pink-50">
                 <div class="flex justify-between items-center relative">
                     <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap mr-1">Chọn Chủ Đề:</span>
@@ -139,7 +140,6 @@
                         <option value="64 Tỉnh Thành">64 Tỉnh Thành</option>
                         <option value="Khác">Khác</option>
                     </select>
-                    <!-- Mũi tên giả cho select -->
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-pink-500">
                         <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                     </div>
@@ -159,26 +159,29 @@
         </div>
     </div>
 
-    <!-- NHÚNG MODULES -->
+    <!-- NHÚNG MODULES BỘ LỌC TỪ THƯ MỤC BOLOC -->
     <script src="boloc/core_boloc.js"></script> 
     <script src="boloc/mac_dinh.js"></script> 
     <script src="boloc/trang_hong.js"></script> 
+
+    <!-- NHÚNG PHỤ KIỆN VÀ KHUNG -->
     <script src="Kinh/kinh.js"></script> 
     <script src="Mu/mu.js"></script> 
     <script>var ALL_FRAMES = [];</script>
     
-    <!-- CÁC FILE KHUNG CŨ CỦA BẠN -->
+    <!-- CÁC FILE KHUNG CŨ -->
     <script src="style3/khung_cucxanh.js"></script> 
     <script src="style3/khung_gty.js"></script>
     <script src="style3/khung_kt_team.js"></script>
     <script src="style3/khung_kn_team.js"></script>
 
-    <!-- LOGIC ỨNG DỤNG CHÍNH VÀ CẤU HÌNH 64 TỈNH THÀNH -->
+    <!-- LOGIC ỨNG DỤNG CHÍNH VÀ CẤU HÌNH 64 TỈNH THÀNH CHUYÊN SÂU -->
     <script>
         // =====================================
-        // TIÊM CẤU HÌNH DANH MỤC VÀ KHUNG TỈNH THÀNH
+        // CẤU HÌNH DANH MỤC VÀ KHUNG TỈNH THÀNH (TỰ ĐỘNG BẮT CẶP)
         // =====================================
-        // Phân loại các khung cũ hiện có trong ALL_FRAMES
+        
+        // Phân loại các khung cũ hiện có
         ALL_FRAMES.forEach(f => {
             if(f.name.toLowerCase().includes('kỹ thuật') || f.name.toLowerCase().includes('kiểm nghiệm')) {
                 f.category = 'Tên Đơn Vị';
@@ -187,11 +190,8 @@
             }
         });
 
-        // Thiết lập cấu hình khung Phong Bì (64 Tỉnh Thành)
-        // Kích thước: 1200x3600 | 3 lỗ cắt: 1034x745, X:83. Y lỗ 1: 239. Khoảng cách: 97
-        // Y lỗ 2 = 239 + 745 + 97 = 1081
-        // Y lỗ 3 = 1081 + 745 + 97 = 1923
-        const layoutPhongBi = {
+        // Cấu hình tọa độ chung cho các Form Tỉnh Thành
+        const layoutChung = {
             canvasW: 1200, canvasH: 3600,
             photos: [
                 { x: 83, y: 239, w: 1034, h: 745 },
@@ -200,27 +200,36 @@
             ]
         };
 
-        // Thêm tỉnh Ninh Bình
-        ALL_FRAMES.push({
-            id: 'f_ninhbinh', type: 3, name: 'Ninh Bình', category: '64 Tỉnh Thành',
-            src: 'style3/khungphongbi.png',          // Frame gốc dùng chung
-            overlaySrc: 'style3/ninhbinh.png',       // Tem tỉnh thành dán đè lên
-            overlayPos: { x: 88, y: 2773, w: 1027, h: 741 }, // Vị trí dán tem tỉnh
-            layout: layoutPhongBi
-        });
+        // Danh sách Khung nền (Base)
+        const baseFrames = [
+            { idPrefix: 'pb', namePrefix: 'Phong Bì', src: 'style3/khungphongbi.png' },
+            { idPrefix: 'gb', namePrefix: 'Giấy Báo', src: 'style3/giaybao.png' }
+        ];
 
-        // Thêm tỉnh Hà Nam
-        ALL_FRAMES.push({
-            id: 'f_hanam', type: 3, name: 'Hà Nam', category: '64 Tỉnh Thành',
-            src: 'style3/khungphongbi.png',
-            overlaySrc: 'style3/hanam.png',
-            overlayPos: { x: 88, y: 2773, w: 1027, h: 741 },
-            layout: layoutPhongBi
-        });
+        // Danh sách Tem tỉnh thành
+        const provinces = [
+            { id: 'ninhbinh', name: 'Ninh Bình', overlaySrc: 'style3/ninhbinh.png' },
+            { id: 'hanam', name: 'Hà Nam', overlaySrc: 'style3/hanam.png' }
+        ];
 
+        // Vòng lặp nhân bản và bắt cặp
+        baseFrames.forEach(base => {
+            provinces.forEach(prov => {
+                ALL_FRAMES.push({
+                    id: `f_${base.idPrefix}_${prov.id}`, 
+                    type: 3, 
+                    name: `${base.namePrefix} - ${prov.name}`,
+                    category: '64 Tỉnh Thành',
+                    src: base.src,
+                    overlaySrc: prov.overlaySrc,
+                    overlayPos: { x: 88, y: 2773, w: 1027, h: 741 }, 
+                    layout: layoutChung
+                });
+            });
+        });
 
         // =====================================
-        // LOGIC LÕI CỦA TRANG (AI, CAMERA, CHỤP ẢNH)
+        // LOGIC LÕI CỦA TRANG
         // =====================================
         let currentAccessoryType = 'none', currentAccessorySrc = null;
         const accessoryImgElement = new Image();
@@ -395,12 +404,12 @@
         }
 
         // =====================================
-        // WORKSPACE CHỌN KHUNG & LỌC CHỦ ĐỀ
+        // WORKSPACE CHỌN KHUNG & LỌC
         // =====================================
         function showWorkspace() {
             mainCameraArea.classList.add('hidden'); mainCameraArea.classList.remove('flex');
             workspaceArea.classList.remove('hidden'); workspaceArea.classList.add('flex');
-            filterFrames(); // Gọi hàm lọc để render lưới khung
+            filterFrames(); 
         }
 
         function filterFrames() {
@@ -409,7 +418,6 @@
             const grid = document.getElementById('availableFramesGrid'); 
             grid.innerHTML = '';
             
-            // Lọc khung theo Type (3), Danh mục và Tên
             let filteredFrames = ALL_FRAMES.filter(f => f.type === 3);
             if (category !== 'All') filteredFrames = filteredFrames.filter(f => f.category === category);
             if (searchQuery !== '') filteredFrames = filteredFrames.filter(f => f.name.toLowerCase().includes(searchQuery));
@@ -425,7 +433,6 @@
                     processFinalImage(frame);
                 };
                 
-                // Mẹo nhỏ: Hiển thị CSS chồng lớp (absolute) cho ảnh xem trước của lưới nếu khung đó có overlay (tỉnh thành)
                 let overlayHtml = '';
                 if(frame.overlaySrc) {
                     const topPercent = (frame.overlayPos.y / frame.layout.canvasH) * 100;
@@ -453,7 +460,6 @@
             canvas.width = layout.canvasW; canvas.height = layout.canvasH; 
             ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Vẽ 3 ảnh selfie
             rawImages.forEach((img, idx) => {
                 const slot = layout.photos[idx]; if(!slot) return;
                 const srcW = (img.width/img.height < slot.w/slot.h) ? img.width : img.height * (slot.w/slot.h);
@@ -464,13 +470,11 @@
                 ctx.drawImage(img, srcX, srcY, srcW, srcH, -slot.w/2, -slot.h/2, slot.w, slot.h); ctx.restore();
             });
 
-            // 2. Vẽ khung nền (Base Frame)
             await new Promise(res => {
                 const frameImg = new Image(); frameImg.onload = () => { ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height); res(); };
                 frameImg.onerror = () => res(); frameImg.src = frameConfig.src;
             });
 
-            // 3. Vẽ dán đè Overlay (Tem Tỉnh Thành) nếu có
             if (frameConfig.overlaySrc && frameConfig.overlayPos) {
                 await new Promise(res => {
                     const overlayImg = new Image();
