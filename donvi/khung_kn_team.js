@@ -8,7 +8,7 @@ ALL_FRAMES.push({
     id: 'f_kt_team', 
     type: 3, 
     name: 'Kiểm Nghiệm TEAM', 
-    src: 'style3/KN.png', // Hãy đảm bảo bạn đã tải file KT.png vào thư mục style3
+    src: 'donvi/KN.png', // Hãy đảm bảo bạn đã tải file KT.png vào thư mục style3
     layout: {
         canvasW: 807, canvasH: 2400,
         photos: [
