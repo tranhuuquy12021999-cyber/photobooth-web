@@ -161,12 +161,90 @@
         let rawImages = [], isProcessing = false, useFrontCamera = true, aiCameraInstance = null;
         let viewingPhotoIndex = -1, retakingIndex = -1, currentSelectedFrame = null;
 
+        // =====================================
+        // BỘ XỬ LÝ MÀU LUT 512x512 (WEBGL SIÊU MƯỢT)
+        // =====================================
+        const lutEngine = (() => {
+            const glCanvas = document.createElement('canvas');
+            const gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true });
+            if (!gl) return null;
+
+            const vs = `attribute vec2 a_pos; attribute vec2 a_uv; varying vec2 v_uv;
+                void main() { gl_Position = vec4(a_pos, 0.0, 1.0); v_uv = a_uv; }`;
+            const fs = `precision mediump float;
+                uniform sampler2D u_img; uniform sampler2D u_lut; varying vec2 v_uv;
+                vec3 applyLUT(vec3 color) {
+                    float blueColor = color.b * 63.0;
+                    vec2 q1; q1.y = floor(floor(blueColor) / 8.0); q1.x = floor(blueColor) - (q1.y * 8.0);
+                    vec2 q2; q2.y = floor(ceil(blueColor) / 8.0); q2.x = ceil(blueColor) - (q2.y * 8.0);
+                    vec2 p1 = vec2((q1.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.r), (q1.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.g));
+                    vec2 p2 = vec2((q2.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.r), (q2.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.g));
+                    return mix(texture2D(u_lut, p1).rgb, texture2D(u_lut, p2).rgb, fract(blueColor));
+                }
+                void main() { vec4 c = texture2D(u_img, v_uv); gl_FragColor = vec4(applyLUT(c.rgb), c.a); }`;
+
+            const compile = (t, s) => { const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh); return sh; };
+            const prog = gl.createProgram();
+            gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
+            gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+            gl.linkProgram(prog); gl.useProgram(prog);
+
+            const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,1,0,0, 1,1,1,0, -1,-1,0,1, 1,-1,1,1]), gl.STATIC_DRAW);
+            const posLoc = gl.getAttribLocation(prog, 'a_pos'), uvLoc = gl.getAttribLocation(prog, 'a_uv');
+            gl.enableVertexAttribArray(posLoc); gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 16, 0);
+            gl.enableVertexAttribArray(uvLoc); gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 16, 8);
+
+            const makeTex = () => {
+                const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                return tex;
+            };
+            const imgTex = makeTex(), lutTex = makeTex();
+            gl.uniform1i(gl.getUniformLocation(prog, 'u_img'), 0);
+            gl.uniform1i(gl.getUniformLocation(prog, 'u_lut'), 1);
+
+            let loadedSrc = null, isReady = false;
+            return {
+                render(sourceImg, lutSrc, w, h) {
+                    if (loadedSrc !== lutSrc) {
+                        loadedSrc = lutSrc; isReady = false;
+                        const lutImg = new Image(); lutImg.crossOrigin = 'anonymous';
+                        lutImg.onload = () => {
+                            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, lutTex);
+                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lutImg);
+                            isReady = true;
+                        };
+                        lutImg.src = lutSrc;
+                    }
+                    if (!isReady) return null;
+                    if (glCanvas.width !== w || glCanvas.height !== h) { glCanvas.width = w; glCanvas.height = h; gl.viewport(0, 0, w, h); }
+                    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, imgTex);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImg);
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                    return glCanvas;
+                }
+            };
+        })();
+
         function onResultsFaceMesh(results) {
             if(aiLoader) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300); }
             arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
-            arCtx.save(); arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
-            arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height); arCtx.restore();
+
+            // VẼ LỚP NỀN (Ưu tiên dùng LUT WebGL nếu có)
+            arCtx.save();
+            if (currentActiveFilter && currentActiveFilter.lutSrc && lutEngine) {
+                const filteredCanvas = lutEngine.render(results.image, currentActiveFilter.lutSrc, arCanvas.width, arCanvas.height);
+                arCtx.drawImage(filteredCanvas || results.image, 0, 0, arCanvas.width, arCanvas.height);
+            } else {
+                arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
+                arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+            }
+            arCtx.restore();
 
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
@@ -315,13 +393,10 @@
             filterFrames();
         }
 
-        // Đã đổi thành onProvinceChange sẽ gọi lại filterFrames(true) 
-        // để lưới cập nhật đúng ảnh thumbnail của tỉnh mới
         function onProvinceChange() {
             filterFrames(true);
         }
 
-        // Thêm tham số isProvinceChange để giữ lại vị trí Khung đang chọn
         function filterFrames(isProvinceChange = false) {
             const category = document.getElementById('categorySelect').value;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
@@ -335,7 +410,6 @@
                 filteredFrames = filteredFrames.filter(f => f.category === category);
             }
             
-            // Lọc CHỐNG SPAM: Dù ở Tất cả hay 64 Tỉnh, cũng chỉ hiện 1 bản duy nhất theo tỉnh đang chọn ở ô thả xuống
             filteredFrames = filteredFrames.filter(f => {
                 if (f.category === '64 Tỉnh Thành') {
                     return f.provId === selectedProvince;
@@ -378,7 +452,6 @@
                 grid.appendChild(div);
             });
 
-            // Giữ lại vị trí nếu đang chọn Giấy Báo mà bấm đổi Tỉnh
             if (isProvinceChange && currentSelectedFrame) {
                 const matched = filteredFrames.find(f => f.name === currentSelectedFrame.name && f.category === currentSelectedFrame.category);
                 if (matched) {
