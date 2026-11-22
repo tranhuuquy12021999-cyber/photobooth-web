@@ -216,20 +216,29 @@
 
             isBgLoading = true;
             try {
-                if (!bgAI) {
+                if (!bgAI || !isBgReady) {
                     if (aiLoader) {
                         document.getElementById('aiLoaderText').innerText = 'Đang tải AI xóa nền...';
                         aiLoader.style.display = 'flex';
                         aiLoader.style.opacity = '1';
                     }
-                    bgAI = new window.CurtainBgAI();
-                    await bgAI.init();
-                    isBgReady = true;
+
+                    // Tạm cất window.Module của FaceMesh để tránh xung đột với tasks-vision
+                    const savedModule = window.Module;
+                    window.Module = undefined;
+                    try {
+                        const instance = new window.CurtainBgAI();
+                        await instance.init();
+                        bgAI = instance;
+                        isBgReady = true;
+                    } finally {
+                        window.Module = savedModule;
+                    }
                 }
                 await bgAI.setBackground(bgUrl);
                 isBgActive = true;
             } catch (err) {
-                alert('Không tải được ảnh nền: ' + bgUrl + '\nChi tiết: ' + (err && err.message ? err.message : 'Kiểm tra lại tên file trong thư mục nen/'));
+                alert('Lỗi AI xóa nền:\n' + (err && err.message ? err.message : err));
                 isBgActive = false;
             } finally {
                 isBgLoading = false;
@@ -371,7 +380,14 @@
         function startCamera() {
             if (aiCameraInstance) aiCameraInstance.stop();
             arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
-            aiCameraInstance = new Camera(video, { onFrame: async () => { await faceMesh.send({image: video}); }, width: 480, height: 640, facingMode: useFrontCamera ? "user" : "environment" });
+            aiCameraInstance = new Camera(video, {
+                onFrame: async () => {
+                    if (!isBgLoading) await faceMesh.send({image: video});
+                },
+                width: 480,
+                height: 640,
+                facingMode: useFrontCamera ? "user" : "environment"
+            });
             aiCameraInstance.start();
         }
         function switchCamera() { useFrontCamera = !useFrontCamera; if(aiLoader) { document.getElementById('aiLoaderText').innerText = 'AI đang khởi động...'; aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; } startCamera(); }
