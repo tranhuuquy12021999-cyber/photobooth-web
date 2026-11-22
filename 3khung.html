@@ -120,7 +120,7 @@
     <!-- NHÚNG AI XÓA NỀN DÙNG CHUNG -->
     <script type="module" src="./boloc/curtain_bg_ai.js"></script>
 
-    <!-- KHỞI TẠO FACE LANDMARKER (CÙNG PHIÊN BẢN TASKS-VISION VỚI XÓA NỀN -> KHÔNG XUNG ĐỘT) -->
+    <!-- KHỞI TẠO FACE LANDMARKER (HỖ TRỢ TỐI ĐA 4 NGƯỜI CÙNG LÚC) -->
     <script type="module">
         import { FilesetResolver, FaceLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
         window.initFaceLandmarkerAI = async function () {
@@ -132,7 +132,7 @@
                         delegate: 'GPU'
                     },
                     runningMode: 'VIDEO',
-                    numFaces: 1
+                    numFaces: 4
                 });
             } catch (e) {
                 return await FaceLandmarker.createFromOptions(vision, {
@@ -141,7 +141,7 @@
                         delegate: 'CPU'
                     },
                     runningMode: 'VIDEO',
-                    numFaces: 1
+                    numFaces: 4
                 });
             }
         };
@@ -163,6 +163,8 @@
     <script type="module" src="./filter/fluffy_ears_3d.js"></script>
 
     <script>
+        const MAX_FACES = 4;
+
         const provSelect = document.getElementById('provinceSelect');
         if (typeof PROVINCES_DATA !== 'undefined') {
             PROVINCES_DATA.forEach(p => {
@@ -262,7 +264,7 @@
         }
 
         // =====================================
-        // QUẢN LÝ DANH SÁCH FILTER 3D
+        // QUẢN LÝ DANH SÁCH FILTER 3D (HỖ TRỢ NHIỀU NGƯỜI CÙNG LÚC)
         // =====================================
         const LIST_FILTER_3D = [
             { id: 'none', name: 'Tắt', icon: '🚫', classNames: [] },
@@ -274,8 +276,8 @@
 
         const baseCanvas3d = document.getElementById('canvas3d');
         const cameraBox = baseCanvas3d.parentElement;
-        const filter3DInstances = {};
-        const filter3DCanvases = {};
+        const filter3DInstances = {}; // { id: [inst0, inst1, inst2, inst3] }
+        const filter3DCanvases = {};  // { id: [cv0, cv1, cv2, cv3] }
         let activeFilter3DId = 'none';
 
         function renderFilter3DPanel() {
@@ -287,6 +289,36 @@
             });
             html += `</div>`;
             container.innerHTML = html;
+        }
+
+        function hideAllFilter3DCanvases() {
+            baseCanvas3d.classList.add('hidden');
+            Object.values(filter3DCanvases).forEach(arr => {
+                if (Array.isArray(arr)) arr.forEach(cv => cv && cv.classList.add('hidden'));
+            });
+        }
+
+        function getOrCreateFilter3D(id, faceIdx) {
+            const config = LIST_FILTER_3D.find(f => f.id === id);
+            if (!config) return null;
+
+            const FilterClass = config.classNames.map(n => window[n]).find(Boolean);
+            if (!FilterClass) return null;
+
+            if (!filter3DInstances[id]) filter3DInstances[id] = [];
+            if (!filter3DCanvases[id]) filter3DCanvases[id] = [];
+
+            if (!filter3DInstances[id][faceIdx]) {
+                const cv = document.createElement('canvas');
+                cv.className = 'absolute inset-0 w-full h-full object-cover pointer-events-none z-10 hidden';
+                cameraBox.appendChild(cv);
+                filter3DCanvases[id][faceIdx] = cv;
+                filter3DInstances[id][faceIdx] = new FilterClass(cv);
+            }
+            return {
+                instance: filter3DInstances[id][faceIdx],
+                canvas: filter3DCanvases[id][faceIdx]
+            };
         }
 
         function selectFilter3D(id) {
@@ -301,25 +333,7 @@
                 activeBtn.classList.add('border-pink-400', 'text-pink-500');
             }
 
-            baseCanvas3d.classList.add('hidden');
-            Object.values(filter3DCanvases).forEach(cv => cv.classList.add('hidden'));
-
-            if (id === 'none') return;
-
-            const config = LIST_FILTER_3D.find(f => f.id === id);
-            if (!config) return;
-
-            const FilterClass = config.classNames.map(n => window[n]).find(Boolean);
-            if (FilterClass) {
-                if (!filter3DInstances[id]) {
-                    const cv = document.createElement('canvas');
-                    cv.className = 'absolute inset-0 w-full h-full object-cover pointer-events-none z-10';
-                    cameraBox.appendChild(cv);
-                    filter3DCanvases[id] = cv;
-                    filter3DInstances[id] = new FilterClass(cv);
-                }
-                filter3DCanvases[id].classList.remove('hidden');
-            }
+            hideAllFilter3DCanvases();
         }
 
         renderFilterPanel('filterPanelContainer'); 
@@ -349,17 +363,17 @@
                 setTimeout(() => { if (aiLoader && !isBgLoading) aiLoader.style.display = 'none'; }, 300);
             }
 
-            // Nhận diện khuôn mặt bằng FaceLandmarker (tasks-vision)
-            let landmarks = null;
+            // Nhận diện tối đa 4 khuôn mặt bằng FaceLandmarker
+            let allFaces = [];
             if (faceLandmarker && video.currentTime !== lastVideoTime) {
                 lastVideoTime = video.currentTime;
                 const res = faceLandmarker.detectForVideo(video, performance.now());
                 if (res && res.faceLandmarks && res.faceLandmarks.length > 0) {
-                    landmarks = res.faceLandmarks[0];
+                    allFaces = res.faceLandmarks;
                 }
-                window._lastLandmarks = landmarks;
+                window._lastAllFaces = allFaces;
             } else {
-                landmarks = window._lastLandmarks || null;
+                allFaces = window._lastAllFaces || [];
             }
 
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
@@ -371,10 +385,11 @@
                 if (bgOut) sourceFrame = bgOut;
             }
 
-            // BƯỚC 2: CHỈNH MÀU LIGHTROOM (trang_hong_lr.js) HOẶC MẶC ĐỊNH
+            // BƯỚC 2: CHỈNH MÀU LIGHTROOM (nếu có >1 người sẽ dùng mặt nạ da YCbCr cho đều cả nhóm)
+            const filterLandmarks = allFaces.length === 1 ? allFaces[0] : null;
             arCtx.save();
             if (currentActiveFilter && typeof currentActiveFilter.render === 'function') {
-                const out = currentActiveFilter.render(sourceFrame, arCanvas.width, arCanvas.height, arCtx, landmarks);
+                const out = currentActiveFilter.render(sourceFrame, arCanvas.width, arCanvas.height, arCtx, filterLandmarks);
                 if (out) arCtx.drawImage(out, 0, 0, arCanvas.width, arCanvas.height);
             } else {
                 arCtx.filter = (currentActiveFilter && currentActiveFilter.baseFilter) ? currentActiveFilter.baseFilter : 'none';
@@ -388,13 +403,24 @@
             }
             arCtx.restore();
 
-            // BƯỚC 3: VẼ FILTER 3D & KÍNH ĐÈ LÊN TRÊN
-            if (landmarks) {
-                if (activeFilter3DId !== 'none' && filter3DInstances[activeFilter3DId]) {
-                    filter3DInstances[activeFilter3DId].update(landmarks, arCanvas.width, arCanvas.height, useFrontCamera);
+            // BƯỚC 3: VẼ FILTER 3D CHO TỪNG NGƯỜI (TỐI ĐA 4 NGƯỜI)
+            if (activeFilter3DId !== 'none') {
+                for (let i = 0; i < MAX_FACES; i++) {
+                    if (i < allFaces.length) {
+                        const slot = getOrCreateFilter3D(activeFilter3DId, i);
+                        if (slot) {
+                            slot.canvas.classList.remove('hidden');
+                            slot.instance.update(allFaces[i], arCanvas.width, arCanvas.height, useFrontCamera);
+                        }
+                    } else if (filter3DCanvases[activeFilter3DId] && filter3DCanvases[activeFilter3DId][i]) {
+                        filter3DCanvases[activeFilter3DId][i].classList.add('hidden');
+                    }
                 }
+            }
 
-                if (currentAccessoryType === 'glass' && currentAccessorySrc) {
+            // BƯỚC 4: VẼ KÍNH CHO TẤT CẢ MỌI NGƯỜI TRONG KHUNG HÌNH
+            if (currentAccessoryType === 'glass' && currentAccessorySrc && allFaces.length > 0) {
+                allFaces.forEach(landmarks => {
                     const leftEye = landmarks[33], rightEye = landmarks[263];
                     const eyeDistance = Math.hypot(rightEye.x * arCanvas.width - leftEye.x * arCanvas.width, rightEye.y * arCanvas.height - leftEye.y * arCanvas.height);
                     const angle = Math.atan2(rightEye.y * arCanvas.height - leftEye.y * arCanvas.height, rightEye.x * arCanvas.width - leftEye.x * arCanvas.width);
@@ -403,7 +429,7 @@
                     arCtx.save(); arCtx.translate(centerX, centerY); arCtx.rotate(angle);
                     arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
                     arCtx.restore();
-                }
+                });
             }
         }
 
@@ -423,7 +449,6 @@
                 await video.play();
 
                 if (!faceLandmarker) {
-                    // Chờ module FaceLandmarker nạp xong
                     while (typeof window.initFaceLandmarkerAI !== 'function') {
                         await new Promise(r => setTimeout(r, 50));
                     }
@@ -501,8 +526,13 @@
             tCtx.save(); if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height); tCtx.restore();
 
-            if (activeFilter3DId !== 'none' && filter3DCanvases[activeFilter3DId]) {
-                tCtx.drawImage(filter3DCanvases[activeFilter3DId], 0, 0, tempCanvas.width, tempCanvas.height);
+            // Lưu toàn bộ các lớp Filter 3D của những người đang hiện trong khung hình
+            if (activeFilter3DId !== 'none' && Array.isArray(filter3DCanvases[activeFilter3DId])) {
+                filter3DCanvases[activeFilter3DId].forEach(cv => {
+                    if (cv && !cv.classList.contains('hidden')) {
+                        tCtx.drawImage(cv, 0, 0, tempCanvas.width, tempCanvas.height);
+                    }
+                });
             }
 
             if (retakingIndex !== -1) { rawImages[retakingIndex] = tempCanvas; retakingIndex = -1; } else { rawImages.push(tempCanvas); }
