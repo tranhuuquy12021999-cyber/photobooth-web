@@ -167,14 +167,15 @@
         // =====================================
         const DANH_SACH_NEN = [
             { id: 'none', name: 'Nền gốc', url: null },
-            { id: 'rem_den', name: 'Rèm đen', url: './nen/rem_den.jpg' },
-            { id: 'trang', name: 'Studio trắng', url: './nen/studio_trang.jpg' },
-            { id: 'hong', name: 'Hồng pastel', url: './nen/hong_pastel.jpg' }
+            { id: 'rem_toi', name: 'Rèm tối', url: './nen/rem_toi.jpg' },
+            { id: 'studio_hong', name: 'Studio hồng', url: './nen/studio_hong.jpg' },
+            { id: 'bien', name: 'Biển', url: './nen/bien.jpg' }
         ];
 
         let bgAI = null;
         let isBgReady = false;
         let isBgActive = false;
+        let isBgLoading = false;
         let activeBgId = 'none';
 
         function renderBgPanel() {
@@ -209,10 +210,11 @@
             }
 
             if (!window.CurtainBgAI) {
-                console.warn('Chưa tải xong boloc/curtain_bg_ai.js');
+                alert('Lỗi: Chưa tải được file boloc/curtain_bg_ai.js');
                 return;
             }
 
+            isBgLoading = true;
             try {
                 if (!bgAI) {
                     if (aiLoader) {
@@ -227,9 +229,10 @@
                 await bgAI.setBackground(bgUrl);
                 isBgActive = true;
             } catch (err) {
-                console.error('Lỗi AI xóa nền:', err);
+                alert('Không tải được ảnh nền: ' + bgUrl + '\nChi tiết: ' + (err && err.message ? err.message : 'Kiểm tra lại tên file trong thư mục nen/'));
                 isBgActive = false;
             } finally {
+                isBgLoading = false;
                 if (aiLoader) {
                     aiLoader.style.opacity = '0';
                     setTimeout(() => { aiLoader.style.display = 'none'; }, 300);
@@ -313,16 +316,16 @@
         let viewingPhotoIndex = -1, retakingIndex = -1, currentSelectedFrame = null;
 
         function onResultsFaceMesh(results) {
-            if(aiLoader && !isBgActive) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300); }
+            if(aiLoader && !isBgLoading) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader && !isBgLoading) aiLoader.style.display = 'none'; }, 300); }
             arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
             const landmarks = (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) ? results.multiFaceLandmarks[0] : null;
 
-            // BƯỚC 1: AI XÓA & GHÉP PHÔNG NỀN (nếu đang bật)
+            // BƯỚC 1: AI XÓA & GHÉP PHÔNG NỀN (truyền trực tiếp thẻ video)
             let sourceFrame = results.image;
             if (isBgActive && isBgReady && bgAI) {
-                const bgOut = bgAI.processFrame(results.image, false);
+                const bgOut = bgAI.processFrame(video, false);
                 if (bgOut) sourceFrame = bgOut;
             }
 
