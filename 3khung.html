@@ -63,7 +63,7 @@
 
         <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
-        <!-- KHU VỰC FILTER 3D (THAY THẾ HOÀN TOÀN PHỤ KIỆN MŨ) -->
+        <!-- KHU VỰC FILTER 3D -->
         <div id="filter3dContainer" class="w-full max-w-sm mx-auto px-4 pb-4"></div> 
     </div>
 
@@ -121,7 +121,8 @@
     <!-- NHÚNG MODULES CƠ BẢN -->
     <script src="boloc/core_boloc.js"></script> 
     <script src="boloc/mac_dinh.js"></script> 
-    <script src="boloc/trang_hong.js"></script> 
+    <!-- ĐÃ THAY THẾ BỘ LỌC TRẮNG HỒNG CŨ BẰNG trang_hong_lr.js -->
+    <script src="boloc/trang_hong_lr.js"></script> 
     <script src="Kinh/kinh.js"></script> 
     
     <script>var ALL_FRAMES = [];</script>
@@ -162,7 +163,6 @@
         const LIST_FILTER_3D = [
             { id: 'none', name: 'Tắt', icon: '🚫', className: null },
             { id: 'cat_fur', name: 'Mèo 3D', icon: '🐱', className: 'CatFurFilter3D' }
-            // Sau này có filter 3D mới, thêm 1 dòng tương tự ở đây
         ];
 
         const canvas3d = document.getElementById('canvas3d');
@@ -291,14 +291,23 @@
             arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            // VẼ LỚP NỀN (Ưu tiên dùng LUT WebGL nếu có)
+            // VẼ LỚP NỀN (Hỗ trợ hàm render riêng, LUT WebGL, hoặc baseFilter + tintColor)
             arCtx.save();
-            if (currentActiveFilter && currentActiveFilter.lutSrc && lutEngine) {
+            if (currentActiveFilter && typeof currentActiveFilter.render === 'function') {
+                const out = currentActiveFilter.render(results.image, arCanvas.width, arCanvas.height, arCtx);
+                if (out) arCtx.drawImage(out, 0, 0, arCanvas.width, arCanvas.height);
+            } else if (currentActiveFilter && currentActiveFilter.lutSrc && lutEngine) {
                 const filteredCanvas = lutEngine.render(results.image, currentActiveFilter.lutSrc, arCanvas.width, arCanvas.height);
                 arCtx.drawImage(filteredCanvas || results.image, 0, 0, arCanvas.width, arCanvas.height);
             } else {
-                arCtx.filter = currentActiveFilter ? currentActiveFilter.baseFilter : 'none';
+                arCtx.filter = (currentActiveFilter && currentActiveFilter.baseFilter) ? currentActiveFilter.baseFilter : 'none';
                 arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+                if (currentActiveFilter && currentActiveFilter.tintColor) {
+                    arCtx.filter = 'none';
+                    arCtx.fillStyle = currentActiveFilter.tintColor;
+                    arCtx.globalCompositeOperation = 'soft-light';
+                    arCtx.fillRect(0, 0, arCanvas.width, arCanvas.height);
+                }
             }
             arCtx.restore();
 
@@ -310,22 +319,7 @@
                     filter3DInstances[activeFilter3DId].update(landmarks, arCanvas.width, arCanvas.height, useFrontCamera);
                 }
 
-                if (currentActiveFilter && currentActiveFilter.faceFilter) {
-                    if (!window.faceMaskCanvas) { window.faceMaskCanvas = document.createElement('canvas'); window.faceMaskCtx = window.faceMaskCanvas.getContext('2d'); }
-                    const fmCanvas = window.faceMaskCanvas, fmCtx = window.faceMaskCtx;
-                    fmCanvas.width = arCanvas.width; fmCanvas.height = arCanvas.height;
-                    fmCtx.save(); fmCtx.filter = currentActiveFilter.faceFilter; fmCtx.drawImage(results.image, 0, 0, fmCanvas.width, fmCanvas.height); fmCtx.restore();
-                    fmCtx.globalCompositeOperation = 'destination-in';
-                    const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
-                    fmCtx.beginPath(); FACE_OVAL.forEach((index, i) => { const pt = landmarks[index]; const x = pt.x * fmCanvas.width, y = pt.y * fmCanvas.height; if (i === 0) fmCtx.moveTo(x, y); else fmCtx.lineTo(x, y); });
-                    fmCtx.closePath(); fmCtx.shadowColor = 'black'; fmCtx.shadowBlur = 20; fmCtx.fillStyle = 'black'; fmCtx.fill(); fmCtx.fill(); 
-                    arCtx.drawImage(fmCanvas, 0, 0);
-                }
-                if (currentActiveFilter && currentActiveFilter.hasLipstick) {
-                    arCtx.save(); const lipIndices = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
-                    arCtx.beginPath(); lipIndices.forEach((index, i) => { const pt = landmarks[index]; if (i === 0) arCtx.moveTo(pt.x * arCanvas.width, pt.y * arCanvas.height); else arCtx.lineTo(pt.x * arCanvas.width, pt.y * arCanvas.height); });
-                    arCtx.closePath(); arCtx.fillStyle = currentActiveFilter.lipstickColor; arCtx.globalCompositeOperation = 'multiply'; arCtx.fill(); arCtx.restore();
-                }
+                // PHỤ KIỆN KÍNH
                 if (currentAccessoryType === 'glass' && currentAccessorySrc) {
                     const leftEye = landmarks[33], rightEye = landmarks[263];
                     const eyeDistance = Math.hypot(rightEye.x * arCanvas.width - leftEye.x * arCanvas.width, rightEye.y * arCanvas.height - leftEye.y * arCanvas.height);
