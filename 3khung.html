@@ -133,6 +133,9 @@
 
     <!-- NHÚNG CÁC FILE FILTER 3D TRONG THƯ MỤC filter/ -->
     <script type="module" src="./filter/cat_fur_3d.js"></script>
+    <script type="module" src="./filter/rainbow_ears_3d.js"></script>
+    <script type="module" src="./filter/crystal_cat_3d.js"></script>
+    <script type="module" src="./filter/fluffy_ears_3d.js"></script>
 
     <script>
         const provSelect = document.getElementById('provinceSelect');
@@ -158,12 +161,17 @@
         // QUẢN LÝ DANH SÁCH FILTER 3D (THƯ MỤC filter/)
         // =====================================
         const LIST_FILTER_3D = [
-            { id: 'none', name: 'Tắt', icon: '🚫', className: null },
-            { id: 'cat_fur', name: 'Mèo 3D', icon: '🐱', className: 'CatFurFilter3D' }
+            { id: 'none', name: 'Tắt', icon: '🚫', classNames: [] },
+            { id: 'cat_fur', name: 'Mèo 3D', icon: '🐱', classNames: ['CatFurFilter3D'] },
+            { id: 'rainbow_ears', name: 'Tai Cầu Vồng', icon: '🌈', classNames: ['RainbowEarsFilter3D', 'RainbowEars3D'] },
+            { id: 'crystal_cat', name: 'Mèo Pha Lê', icon: '💎', classNames: ['CrystalCatFilter3D', 'CrystalCat3D'] },
+            { id: 'fluffy_ears', name: 'Tai Bông', icon: '🐰', classNames: ['FluffyEarsFilter3D', 'FluffyEars3D'] }
         ];
 
-        const canvas3d = document.getElementById('canvas3d');
+        const baseCanvas3d = document.getElementById('canvas3d');
+        const cameraBox = baseCanvas3d.parentElement;
         const filter3DInstances = {};
+        const filter3DCanvases = {};
         let activeFilter3DId = 'none';
 
         function renderFilter3DPanel() {
@@ -189,17 +197,26 @@
                 activeBtn.classList.add('border-pink-400', 'text-pink-500');
             }
 
-            if (id === 'none') {
-                canvas3d.classList.add('hidden');
-                return;
-            }
+            baseCanvas3d.classList.add('hidden');
+            Object.values(filter3DCanvases).forEach(cv => cv.classList.add('hidden'));
+
+            if (id === 'none') return;
 
             const config = LIST_FILTER_3D.find(f => f.id === id);
-            if (config && config.className && window[config.className]) {
+            if (!config) return;
+
+            const FilterClass = config.classNames.map(n => window[n]).find(Boolean);
+            if (FilterClass) {
                 if (!filter3DInstances[id]) {
-                    filter3DInstances[id] = new window[config.className](canvas3d);
+                    const cv = document.createElement('canvas');
+                    cv.className = 'absolute inset-0 w-full h-full object-cover pointer-events-none z-10';
+                    cameraBox.appendChild(cv);
+                    filter3DCanvases[id] = cv;
+                    filter3DInstances[id] = new FilterClass(cv);
                 }
-                canvas3d.classList.remove('hidden');
+                filter3DCanvases[id].classList.remove('hidden');
+            } else {
+                console.warn('Không tìm thấy class 3D cho:', id, config.classNames);
             }
         }
 
@@ -288,7 +305,6 @@
             arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            // Lấy trước landmarks để truyền vào bộ lọc Trắng Hồng LR (bảo vệ mắt/môi)
             const landmarks = (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) ? results.multiFaceLandmarks[0] : null;
 
             // VẼ LỚP NỀN
@@ -398,8 +414,8 @@
             tCtx.save(); if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height); tCtx.restore();
 
-            if (activeFilter3DId !== 'none' && filter3DInstances[activeFilter3DId]) {
-                tCtx.drawImage(canvas3d, 0, 0, tempCanvas.width, tempCanvas.height);
+            if (activeFilter3DId !== 'none' && filter3DCanvases[activeFilter3DId]) {
+                tCtx.drawImage(filter3DCanvases[activeFilter3DId], 0, 0, tempCanvas.width, tempCanvas.height);
             }
 
             if (retakingIndex !== -1) { rawImages[retakingIndex] = tempCanvas; retakingIndex = -1; } else { rawImages.push(tempCanvas); }
