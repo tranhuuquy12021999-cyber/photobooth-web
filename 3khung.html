@@ -7,9 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css"> 
     
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-    
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #fdf2f8; }
@@ -63,7 +60,6 @@
         <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="filter3dContainer" class="w-full max-w-sm mx-auto px-4"></div> 
-        <!-- KHU VỰC CHỌN PHÔNG NỀN AI -->
         <div id="bgPanelContainer" class="w-full max-w-sm mx-auto px-4 pb-4"></div> 
     </div>
 
@@ -84,7 +80,6 @@
         <div class="w-[52%] flex flex-col h-full bg-white rounded-xl shadow-sm border border-pink-100 p-2 overflow-hidden">
             
             <div class="flex flex-col gap-2 mb-2 pb-2 border-b border-pink-50">
-                <!-- Dòng 1: CHỦ ĐỀ -->
                 <div class="flex items-center w-full gap-2">
                     <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap w-[70px]">Chủ Đề:</span>
                     <div class="flex-1 relative">
@@ -98,7 +93,6 @@
                     </div>
                 </div>
 
-                <!-- Dòng 2: TỈNH THÀNH (Mặc định ẩn) -->
                 <div id="provinceWrapper" class="items-center w-full gap-2 hidden">
                     <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap w-[70px]">Tỉnh Thành:</span>
                     <div class="flex-1 relative">
@@ -107,7 +101,6 @@
                     </div>
                 </div>
 
-                <!-- Dòng 3: Tìm kiếm -->
                 <div class="relative w-full mt-0.5">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-1.5 pointer-events-none"><svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
                     <input type="text" id="searchInput" oninput="filterFrames()" placeholder="Tìm khung..." class="w-full bg-gray-50 border border-gray-200 text-gray-700 text-[10px] rounded focus:ring-pink-300 focus:border-pink-300 block pl-6 py-1 outline-none placeholder-gray-400">
@@ -126,6 +119,33 @@
     
     <!-- NHÚNG AI XÓA NỀN DÙNG CHUNG -->
     <script type="module" src="./boloc/curtain_bg_ai.js"></script>
+
+    <!-- KHỞI TẠO FACE LANDMARKER (CÙNG PHIÊN BẢN TASKS-VISION VỚI XÓA NỀN -> KHÔNG XUNG ĐỘT) -->
+    <script type="module">
+        import { FilesetResolver, FaceLandmarker } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+        window.initFaceLandmarkerAI = async function () {
+            const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+            try {
+                return await FaceLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                        delegate: 'GPU'
+                    },
+                    runningMode: 'VIDEO',
+                    numFaces: 1
+                });
+            } catch (e) {
+                return await FaceLandmarker.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                        delegate: 'CPU'
+                    },
+                    runningMode: 'VIDEO',
+                    numFaces: 1
+                });
+            }
+        };
+    </script>
 
     <script>var ALL_FRAMES = [];</script>
     
@@ -163,7 +183,7 @@
         }
 
         // =====================================
-        // QUẢN LÝ DANH SÁCH PHÔNG NỀN AI (DÙNG CHUNG 1 FILE curtain_bg_ai.js)
+        // QUẢN LÝ DANH SÁCH PHÔNG NỀN AI
         // =====================================
         const DANH_SACH_NEN = [
             { id: 'none', name: 'Nền gốc', url: null },
@@ -222,18 +242,10 @@
                         aiLoader.style.display = 'flex';
                         aiLoader.style.opacity = '1';
                     }
-
-                    // Tạm cất window.Module của FaceMesh để tránh xung đột với tasks-vision
-                    const savedModule = window.Module;
-                    window.Module = undefined;
-                    try {
-                        const instance = new window.CurtainBgAI();
-                        await instance.init();
-                        bgAI = instance;
-                        isBgReady = true;
-                    } finally {
-                        window.Module = savedModule;
-                    }
+                    const instance = new window.CurtainBgAI();
+                    await instance.init();
+                    bgAI = instance;
+                    isBgReady = true;
                 }
                 await bgAI.setBackground(bgUrl);
                 isBgActive = true;
@@ -250,7 +262,7 @@
         }
 
         // =====================================
-        // QUẢN LÝ DANH SÁCH FILTER 3D (THƯ MỤC filter/)
+        // QUẢN LÝ DANH SÁCH FILTER 3D
         // =====================================
         const LIST_FILTER_3D = [
             { id: 'none', name: 'Tắt', icon: '🚫', classNames: [] },
@@ -307,8 +319,6 @@
                     filter3DInstances[id] = new FilterClass(cv);
                 }
                 filter3DCanvases[id].classList.remove('hidden');
-            } else {
-                console.warn('Không tìm thấy class 3D cho:', id, config.classNames);
             }
         }
 
@@ -321,18 +331,41 @@
         const canvas = document.getElementById('resultCanvas'); const ctx = canvas.getContext('2d'); const aiLoader = document.getElementById('aiLoader');
         const mainCameraArea = document.getElementById('mainCameraArea'); const workspaceArea = document.getElementById('workspaceArea');
         
-        let rawImages = [], isProcessing = false, useFrontCamera = true, aiCameraInstance = null;
+        let rawImages = [], isProcessing = false, useFrontCamera = true;
         let viewingPhotoIndex = -1, retakingIndex = -1, currentSelectedFrame = null;
+        let faceLandmarker = null, mediaStream = null, lastVideoTime = -1, animId = null;
 
-        function onResultsFaceMesh(results) {
-            if(aiLoader && !isBgLoading) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader && !isBgLoading) aiLoader.style.display = 'none'; }, 300); }
-            arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
+        function renderLoop() {
+            animId = requestAnimationFrame(renderLoop);
+            if (video.readyState < 2 || video.videoWidth === 0) return;
+
+            if (arCanvas.width !== video.videoWidth || arCanvas.height !== video.videoHeight) {
+                arCanvas.width = video.videoWidth;
+                arCanvas.height = video.videoHeight;
+            }
+
+            if (aiLoader && !isBgLoading && faceLandmarker) {
+                aiLoader.style.opacity = '0';
+                setTimeout(() => { if (aiLoader && !isBgLoading) aiLoader.style.display = 'none'; }, 300);
+            }
+
+            // Nhận diện khuôn mặt bằng FaceLandmarker (tasks-vision)
+            let landmarks = null;
+            if (faceLandmarker && video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                const res = faceLandmarker.detectForVideo(video, performance.now());
+                if (res && res.faceLandmarks && res.faceLandmarks.length > 0) {
+                    landmarks = res.faceLandmarks[0];
+                }
+                window._lastLandmarks = landmarks;
+            } else {
+                landmarks = window._lastLandmarks || null;
+            }
+
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
-            const landmarks = (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) ? results.multiFaceLandmarks[0] : null;
-
-            // BƯỚC 1: AI XÓA & GHÉP PHÔNG NỀN (truyền trực tiếp thẻ video)
-            let sourceFrame = results.image;
+            // BƯỚC 1: AI XÓA & GHÉP PHÔNG NỀN
+            let sourceFrame = video;
             if (isBgActive && isBgReady && bgAI) {
                 const bgOut = bgAI.processFrame(video, false);
                 if (bgOut) sourceFrame = bgOut;
@@ -373,24 +406,44 @@
                 }
             }
         }
-        const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
-        faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-        faceMesh.onResults(onResultsFaceMesh);
 
-        function startCamera() {
-            if (aiCameraInstance) aiCameraInstance.stop();
+        async function startCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+            }
+            if (animId) cancelAnimationFrame(animId);
+
             arCanvas.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
-            aiCameraInstance = new Camera(video, {
-                onFrame: async () => {
-                    if (!isBgLoading) await faceMesh.send({image: video});
-                },
-                width: 480,
-                height: 640,
-                facingMode: useFrontCamera ? "user" : "environment"
-            });
-            aiCameraInstance.start();
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: useFrontCamera ? "user" : "environment", width: { ideal: 480 }, height: { ideal: 640 } },
+                    audio: false
+                });
+                video.srcObject = mediaStream;
+                await video.play();
+
+                if (!faceLandmarker) {
+                    // Chờ module FaceLandmarker nạp xong
+                    while (typeof window.initFaceLandmarkerAI !== 'function') {
+                        await new Promise(r => setTimeout(r, 50));
+                    }
+                    faceLandmarker = await window.initFaceLandmarkerAI();
+                }
+                renderLoop();
+            } catch (err) {
+                alert('Không thể mở camera: ' + (err.message || err));
+            }
         }
-        function switchCamera() { useFrontCamera = !useFrontCamera; if(aiLoader) { document.getElementById('aiLoaderText').innerText = 'AI đang khởi động...'; aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; } startCamera(); }
+
+        function switchCamera() {
+            useFrontCamera = !useFrontCamera;
+            if (aiLoader) {
+                document.getElementById('aiLoaderText').innerText = 'Đang đổi camera...';
+                aiLoader.style.display = 'flex';
+                aiLoader.style.opacity = '1';
+            }
+            startCamera();
+        }
         startCamera();
 
         function updateThumbnails() {
