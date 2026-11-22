@@ -14,8 +14,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #fdf2f8; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
-        #filterPanelContainer h3, #glassesContainer h3, #filter3dContainer h3 { margin-top: 8px !important; margin-bottom: 4px !important; }
-        #filterPanelContainer .pb-2, #glassesContainer .mb-4, #filter3dContainer .pb-4 { padding-bottom: 4px !important; margin-bottom: 4px !important; }
+        #filterPanelContainer h3, #glassesContainer h3, #filter3dContainer h3, #bgPanelContainer h3 { margin-top: 8px !important; margin-bottom: 4px !important; }
+        #filterPanelContainer .pb-2, #glassesContainer .mb-4, #filter3dContainer .pb-4, #bgPanelContainer .pb-4 { padding-bottom: 4px !important; margin-bottom: 4px !important; }
     </style>
 </head>
 <body class="bg-pink-50 min-h-screen font-sans flex flex-col pb-2 h-[100dvh]">
@@ -44,7 +44,7 @@
                 <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg></button>
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-400 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow border border-pink-300">Đã Chụp <span id="shootCount">0</span>/3</div>
                 <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30"></div>
-                <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div><span class="text-xs text-pink-500 font-bold mt-2">AI đang khởi động...</span></div>
+                <div id="aiLoader" class="absolute inset-0 flex items-center justify-center bg-white/80 z-40 flex-col transition-opacity duration-300"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-2"></div><span id="aiLoaderText" class="text-xs text-pink-500 font-bold mt-2">AI đang khởi động...</span></div>
             </div>
         </div>
 
@@ -62,7 +62,9 @@
 
         <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
-        <div id="filter3dContainer" class="w-full max-w-sm mx-auto px-4 pb-4"></div> 
+        <div id="filter3dContainer" class="w-full max-w-sm mx-auto px-4"></div> 
+        <!-- KHU VỰC CHỌN PHÔNG NỀN AI -->
+        <div id="bgPanelContainer" class="w-full max-w-sm mx-auto px-4 pb-4"></div> 
     </div>
 
     <!-- MÀN HÌNH 2: CHỌN KHUNG GIAO DIỆN -->
@@ -122,6 +124,9 @@
     <script src="boloc/trang_hong_lr.js"></script> 
     <script src="Kinh/kinh.js"></script> 
     
+    <!-- NHÚNG AI XÓA NỀN DÙNG CHUNG -->
+    <script type="module" src="./boloc/curtain_bg_ai.js"></script>
+
     <script>var ALL_FRAMES = [];</script>
     
     <!-- NHÚNG CÁC FILE KHUNG -->
@@ -155,6 +160,81 @@
             if (src) { currentAccessorySrc = src; accessoryImgElement.src = src; } else { currentAccessorySrc = null; }
             document.querySelectorAll('.acc-btn').forEach(btn => { btn.classList.remove('border-pink-400'); btn.classList.add('border-transparent'); });
             btnElement.classList.remove('border-transparent'); btnElement.classList.add('border-pink-400');
+        }
+
+        // =====================================
+        // QUẢN LÝ DANH SÁCH PHÔNG NỀN AI (DÙNG CHUNG 1 FILE curtain_bg_ai.js)
+        // =====================================
+        const DANH_SACH_NEN = [
+            { id: 'none', name: 'Nền gốc', url: null },
+            { id: 'rem_den', name: 'Rèm đen', url: './nen/rem_den.jpg' },
+            { id: 'trang', name: 'Studio trắng', url: './nen/studio_trang.jpg' },
+            { id: 'hong', name: 'Hồng pastel', url: './nen/hong_pastel.jpg' }
+        ];
+
+        let bgAI = null;
+        let isBgReady = false;
+        let isBgActive = false;
+        let activeBgId = 'none';
+
+        function renderBgPanel() {
+            const container = document.getElementById('bgPanelContainer');
+            let html = `<h3 class="text-xs font-bold text-pink-500">Phông nền AI</h3><div class="flex gap-2 overflow-x-auto pb-1">`;
+            DANH_SACH_NEN.forEach(item => {
+                const activeClass = item.id === activeBgId ? 'border-pink-400 text-pink-500' : 'border-transparent text-gray-600';
+                const thumb = item.url 
+                    ? `<img src="${item.url}" class="w-4 h-4 rounded-full object-cover border border-gray-200" onerror="this.style.display='none'">` 
+                    : `<span>🚫</span>`;
+                html += `<button id="bg_btn_${item.id}" onclick="chonAnhNen('${item.id}', ${item.url ? `'${item.url}'` : 'null'})" class="bg-btn flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white border-2 ${activeClass} shadow-sm active:scale-95 transition">${thumb}<span>${item.name}</span></button>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        async function chonAnhNen(id, bgUrl) {
+            activeBgId = id;
+            document.querySelectorAll('.bg-btn').forEach(btn => {
+                btn.classList.remove('border-pink-400', 'text-pink-500');
+                btn.classList.add('border-transparent', 'text-gray-600');
+            });
+            const activeBtn = document.getElementById(`bg_btn_${id}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-600');
+                activeBtn.classList.add('border-pink-400', 'text-pink-500');
+            }
+
+            if (!bgUrl) {
+                isBgActive = false;
+                return;
+            }
+
+            if (!window.CurtainBgAI) {
+                console.warn('Chưa tải xong boloc/curtain_bg_ai.js');
+                return;
+            }
+
+            try {
+                if (!bgAI) {
+                    if (aiLoader) {
+                        document.getElementById('aiLoaderText').innerText = 'Đang tải AI xóa nền...';
+                        aiLoader.style.display = 'flex';
+                        aiLoader.style.opacity = '1';
+                    }
+                    bgAI = new window.CurtainBgAI();
+                    await bgAI.init();
+                    isBgReady = true;
+                }
+                await bgAI.setBackground(bgUrl);
+                isBgActive = true;
+            } catch (err) {
+                console.error('Lỗi AI xóa nền:', err);
+                isBgActive = false;
+            } finally {
+                if (aiLoader) {
+                    aiLoader.style.opacity = '0';
+                    setTimeout(() => { aiLoader.style.display = 'none'; }, 300);
+                }
+            }
         }
 
         // =====================================
@@ -223,6 +303,7 @@
         renderFilterPanel('filterPanelContainer'); 
         renderGlassesPanel('glassesContainer'); 
         renderFilter3DPanel();
+        renderBgPanel();
 
         const video = document.getElementById('camera'); const arCanvas = document.getElementById('arCanvas'); const arCtx = arCanvas.getContext('2d');
         const canvas = document.getElementById('resultCanvas'); const ctx = canvas.getContext('2d'); const aiLoader = document.getElementById('aiLoader');
@@ -231,93 +312,28 @@
         let rawImages = [], isProcessing = false, useFrontCamera = true, aiCameraInstance = null;
         let viewingPhotoIndex = -1, retakingIndex = -1, currentSelectedFrame = null;
 
-        // =====================================
-        // BỘ XỬ LÝ MÀU LUT 512x512 (WEBGL SIÊU MƯỢT)
-        // =====================================
-        const lutEngine = (() => {
-            const glCanvas = document.createElement('canvas');
-            const gl = glCanvas.getContext('webgl', { preserveDrawingBuffer: true });
-            if (!gl) return null;
-
-            const vs = `attribute vec2 a_pos; attribute vec2 a_uv; varying vec2 v_uv;
-                void main() { gl_Position = vec4(a_pos, 0.0, 1.0); v_uv = a_uv; }`;
-            const fs = `precision mediump float;
-                uniform sampler2D u_img; uniform sampler2D u_lut; varying vec2 v_uv;
-                vec3 applyLUT(vec3 color) {
-                    float blueColor = color.b * 63.0;
-                    vec2 q1; q1.y = floor(floor(blueColor) / 8.0); q1.x = floor(blueColor) - (q1.y * 8.0);
-                    vec2 q2; q2.y = floor(ceil(blueColor) / 8.0); q2.x = ceil(blueColor) - (q2.y * 8.0);
-                    vec2 p1 = vec2((q1.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.r), (q1.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.g));
-                    vec2 p2 = vec2((q2.x * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.r), (q2.y * 0.125) + 0.5/512.0 + ((0.125 - 1.0/512.0) * color.g));
-                    return mix(texture2D(u_lut, p1).rgb, texture2D(u_lut, p2).rgb, fract(blueColor));
-                }
-                void main() { vec4 c = texture2D(u_img, v_uv); gl_FragColor = vec4(applyLUT(c.rgb), c.a); }`;
-
-            const compile = (t, s) => { const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh); return sh; };
-            const prog = gl.createProgram();
-            gl.attachShader(prog, compile(gl.VERTEX_SHADER, vs));
-            gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
-            gl.linkProgram(prog); gl.useProgram(prog);
-
-            const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,1,0,0, 1,1,1,0, -1,-1,0,1, 1,-1,1,1]), gl.STATIC_DRAW);
-            const posLoc = gl.getAttribLocation(prog, 'a_pos'), uvLoc = gl.getAttribLocation(prog, 'a_uv');
-            gl.enableVertexAttribArray(posLoc); gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 16, 0);
-            gl.enableVertexAttribArray(uvLoc); gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 16, 8);
-
-            const makeTex = () => {
-                const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                return tex;
-            };
-            const imgTex = makeTex(), lutTex = makeTex();
-            gl.uniform1i(gl.getUniformLocation(prog, 'u_img'), 0);
-            gl.uniform1i(gl.getUniformLocation(prog, 'u_lut'), 1);
-
-            let loadedSrc = null, isReady = false;
-            return {
-                render(sourceImg, lutSrc, w, h) {
-                    if (loadedSrc !== lutSrc) {
-                        loadedSrc = lutSrc; isReady = false;
-                        const lutImg = new Image(); lutImg.crossOrigin = 'anonymous';
-                        lutImg.onload = () => {
-                            gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, lutTex);
-                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lutImg);
-                            isReady = true;
-                        };
-                        lutImg.src = lutSrc;
-                    }
-                    if (!isReady) return null;
-                    if (glCanvas.width !== w || glCanvas.height !== h) { glCanvas.width = w; glCanvas.height = h; gl.viewport(0, 0, w, h); }
-                    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, imgTex);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceImg);
-                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-                    return glCanvas;
-                }
-            };
-        })();
-
         function onResultsFaceMesh(results) {
-            if(aiLoader) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300); }
+            if(aiLoader && !isBgActive) { aiLoader.style.opacity = '0'; setTimeout(() => { if(aiLoader) aiLoader.style.display = 'none'; }, 300); }
             arCanvas.width = video.videoWidth; arCanvas.height = video.videoHeight;
             arCtx.clearRect(0, 0, arCanvas.width, arCanvas.height);
 
             const landmarks = (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) ? results.multiFaceLandmarks[0] : null;
 
-            // VẼ LỚP NỀN
+            // BƯỚC 1: AI XÓA & GHÉP PHÔNG NỀN (nếu đang bật)
+            let sourceFrame = results.image;
+            if (isBgActive && isBgReady && bgAI) {
+                const bgOut = bgAI.processFrame(results.image, false);
+                if (bgOut) sourceFrame = bgOut;
+            }
+
+            // BƯỚC 2: CHỈNH MÀU LIGHTROOM (trang_hong_lr.js) HOẶC MẶC ĐỊNH
             arCtx.save();
             if (currentActiveFilter && typeof currentActiveFilter.render === 'function') {
-                const out = currentActiveFilter.render(results.image, arCanvas.width, arCanvas.height, arCtx, landmarks);
+                const out = currentActiveFilter.render(sourceFrame, arCanvas.width, arCanvas.height, arCtx, landmarks);
                 if (out) arCtx.drawImage(out, 0, 0, arCanvas.width, arCanvas.height);
-            } else if (currentActiveFilter && currentActiveFilter.lutSrc && lutEngine) {
-                const filteredCanvas = lutEngine.render(results.image, currentActiveFilter.lutSrc, arCanvas.width, arCanvas.height);
-                arCtx.drawImage(filteredCanvas || results.image, 0, 0, arCanvas.width, arCanvas.height);
             } else {
                 arCtx.filter = (currentActiveFilter && currentActiveFilter.baseFilter) ? currentActiveFilter.baseFilter : 'none';
-                arCtx.drawImage(results.image, 0, 0, arCanvas.width, arCanvas.height);
+                arCtx.drawImage(sourceFrame, 0, 0, arCanvas.width, arCanvas.height);
                 if (currentActiveFilter && currentActiveFilter.tintColor) {
                     arCtx.filter = 'none';
                     arCtx.fillStyle = currentActiveFilter.tintColor;
@@ -327,13 +343,12 @@
             }
             arCtx.restore();
 
+            // BƯỚC 3: VẼ FILTER 3D & KÍNH ĐÈ LÊN TRÊN
             if (landmarks) {
-                // CẬP NHẬT FILTER 3D ĐANG CHỌN
                 if (activeFilter3DId !== 'none' && filter3DInstances[activeFilter3DId]) {
                     filter3DInstances[activeFilter3DId].update(landmarks, arCanvas.width, arCanvas.height, useFrontCamera);
                 }
 
-                // PHỤ KIỆN KÍNH
                 if (currentAccessoryType === 'glass' && currentAccessorySrc) {
                     const leftEye = landmarks[33], rightEye = landmarks[263];
                     const eyeDistance = Math.hypot(rightEye.x * arCanvas.width - leftEye.x * arCanvas.width, rightEye.y * arCanvas.height - leftEye.y * arCanvas.height);
@@ -356,7 +371,7 @@
             aiCameraInstance = new Camera(video, { onFrame: async () => { await faceMesh.send({image: video}); }, width: 480, height: 640, facingMode: useFrontCamera ? "user" : "environment" });
             aiCameraInstance.start();
         }
-        function switchCamera() { useFrontCamera = !useFrontCamera; if(aiLoader) { aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; } startCamera(); }
+        function switchCamera() { useFrontCamera = !useFrontCamera; if(aiLoader) { document.getElementById('aiLoaderText').innerText = 'AI đang khởi động...'; aiLoader.style.display = 'flex'; aiLoader.style.opacity = '1'; } startCamera(); }
         startCamera();
 
         function updateThumbnails() {
