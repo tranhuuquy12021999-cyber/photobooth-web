@@ -14,8 +14,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #fdf2f8; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
-        #filterPanelContainer h3, #glassesContainer h3, #hatsContainer h3 { margin-top: 8px !important; margin-bottom: 4px !important; }
-        #filterPanelContainer .pb-2, #glassesContainer .mb-4, #hatsContainer .pb-4 { padding-bottom: 4px !important; margin-bottom: 4px !important; }
+        #filterPanelContainer h3, #glassesContainer h3, #filter3dContainer h3 { margin-top: 8px !important; margin-bottom: 4px !important; }
+        #filterPanelContainer .pb-2, #glassesContainer .mb-4, #filter3dContainer .pb-4 { padding-bottom: 4px !important; margin-bottom: 4px !important; }
     </style>
 </head>
 <body class="bg-pink-50 min-h-screen font-sans flex flex-col pb-2 h-[100dvh]">
@@ -39,6 +39,9 @@
             <div class="camera-container relative bg-gray-200 shadow-md">
                 <video id="camera" class="absolute inset-0 w-full h-full object-cover opacity-0" autoplay playsinline muted></video>
                 <canvas id="arCanvas" class="absolute inset-0 w-full h-full object-cover transition-transform duration-300"></canvas>
+                <!-- CANVAS 3D ĐÈ KHÍT LÊN CAMERA -->
+                <canvas id="canvas3d" class="absolute inset-0 w-full h-full object-cover pointer-events-none z-10 hidden"></canvas>
+
                 <button onclick="switchCamera()" class="absolute top-3 right-3 w-9 h-9 bg-white/80 rounded-full flex items-center justify-center text-pink-500 shadow-md active:scale-90 transition z-40"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg></button>
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-pink-400 text-white text-xs px-4 py-1.5 rounded-full font-bold z-20 shadow border border-pink-300">Đã Chụp <span id="shootCount">0</span>/3</div>
                 <div id="countdown" class="absolute inset-0 flex items-center justify-center text-[100px] text-white font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)] hidden z-30"></div>
@@ -60,7 +63,8 @@
 
         <div id="filterPanelContainer" class="w-full max-w-sm mx-auto"></div> 
         <div id="glassesContainer" class="w-full max-w-sm mx-auto"></div> 
-        <div id="hatsContainer" class="w-full max-w-sm mx-auto"></div> 
+        <!-- KHU VỰC FILTER 3D (THAY THẾ HOÀN TOÀN PHỤ KIỆN MŨ) -->
+        <div id="filter3dContainer" class="w-full max-w-sm mx-auto px-4 pb-4"></div> 
     </div>
 
     <!-- MÀN HÌNH 2: CHỌN KHUNG GIAO DIỆN -->
@@ -98,9 +102,7 @@
                 <div id="provinceWrapper" class="items-center w-full gap-2 hidden">
                     <span class="text-pink-500 font-bold text-[10px] whitespace-nowrap w-[70px]">Tỉnh Thành:</span>
                     <div class="flex-1 relative">
-                        <select id="provinceSelect" onchange="onProvinceChange()" class="w-full text-[10px] bg-white border border-gray-200 text-gray-700 rounded py-1 px-1.5 outline-none font-bold appearance-none">
-                            <!-- JS tự điền danh sách -->
-                        </select>
+                        <select id="provinceSelect" onchange="onProvinceChange()" class="w-full text-[10px] bg-white border border-gray-200 text-gray-700 rounded py-1 px-1.5 outline-none font-bold appearance-none"></select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
                     </div>
                 </div>
@@ -121,7 +123,6 @@
     <script src="boloc/mac_dinh.js"></script> 
     <script src="boloc/trang_hong.js"></script> 
     <script src="Kinh/kinh.js"></script> 
-    <script src="Mu/mu.js"></script> 
     
     <script>var ALL_FRAMES = [];</script>
     
@@ -131,6 +132,9 @@
     <script src="donvi/khung_kt_team.js"></script>
     <script src="donvi/khung_kn_team.js"></script>
     <script src="64tinh/tinh_thanh.js"></script>
+
+    <!-- NHÚNG CÁC FILE FILTER 3D TRONG THƯ MỤC filter/ -->
+    <script type="module" src="./filter/cat_fur_3d.js"></script>
 
     <script>
         const provSelect = document.getElementById('provinceSelect');
@@ -152,7 +156,59 @@
             btnElement.classList.remove('border-transparent'); btnElement.classList.add('border-pink-400');
         }
 
-        renderFilterPanel('filterPanelContainer'); renderGlassesPanel('glassesContainer'); renderHatsPanel('hatsContainer');
+        // =====================================
+        // QUẢN LÝ DANH SÁCH FILTER 3D (THƯ MỤC filter/)
+        // =====================================
+        const LIST_FILTER_3D = [
+            { id: 'none', name: 'Tắt', icon: '🚫', className: null },
+            { id: 'cat_fur', name: 'Mèo 3D', icon: '🐱', className: 'CatFurFilter3D' }
+            // Sau này có filter 3D mới, thêm 1 dòng tương tự ở đây
+        ];
+
+        const canvas3d = document.getElementById('canvas3d');
+        const filter3DInstances = {};
+        let activeFilter3DId = 'none';
+
+        function renderFilter3DPanel() {
+            const container = document.getElementById('filter3dContainer');
+            let html = `<h3 class="text-xs font-bold text-pink-500">Filter 3D</h3><div class="flex gap-2 overflow-x-auto pb-1">`;
+            LIST_FILTER_3D.forEach(item => {
+                const activeClass = item.id === activeFilter3DId ? 'border-pink-400 text-pink-500' : 'border-transparent text-gray-600';
+                html += `<button id="f3d_btn_${item.id}" onclick="selectFilter3D('${item.id}')" class="f3d-btn flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white border-2 ${activeClass} shadow-sm active:scale-95 transition">${item.icon} ${item.name}</button>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function selectFilter3D(id) {
+            activeFilter3DId = id;
+            document.querySelectorAll('.f3d-btn').forEach(btn => {
+                btn.classList.remove('border-pink-400', 'text-pink-500');
+                btn.classList.add('border-transparent', 'text-gray-600');
+            });
+            const activeBtn = document.getElementById(`f3d_btn_${id}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-600');
+                activeBtn.classList.add('border-pink-400', 'text-pink-500');
+            }
+
+            if (id === 'none') {
+                canvas3d.classList.add('hidden');
+                return;
+            }
+
+            const config = LIST_FILTER_3D.find(f => f.id === id);
+            if (config && config.className && window[config.className]) {
+                if (!filter3DInstances[id]) {
+                    filter3DInstances[id] = new window[config.className](canvas3d);
+                }
+                canvas3d.classList.remove('hidden');
+            }
+        }
+
+        renderFilterPanel('filterPanelContainer'); 
+        renderGlassesPanel('glassesContainer'); 
+        renderFilter3DPanel();
 
         const video = document.getElementById('camera'); const arCanvas = document.getElementById('arCanvas'); const arCtx = arCanvas.getContext('2d');
         const canvas = document.getElementById('resultCanvas'); const ctx = canvas.getContext('2d'); const aiLoader = document.getElementById('aiLoader');
@@ -248,6 +304,12 @@
 
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
+
+                // CẬP NHẬT FILTER 3D ĐANG CHỌN
+                if (activeFilter3DId !== 'none' && filter3DInstances[activeFilter3DId]) {
+                    filter3DInstances[activeFilter3DId].update(landmarks, arCanvas.width, arCanvas.height, useFrontCamera);
+                }
+
                 if (currentActiveFilter && currentActiveFilter.faceFilter) {
                     if (!window.faceMaskCanvas) { window.faceMaskCanvas = document.createElement('canvas'); window.faceMaskCtx = window.faceMaskCanvas.getContext('2d'); }
                     const fmCanvas = window.faceMaskCanvas, fmCtx = window.faceMaskCtx;
@@ -264,20 +326,14 @@
                     arCtx.beginPath(); lipIndices.forEach((index, i) => { const pt = landmarks[index]; if (i === 0) arCtx.moveTo(pt.x * arCanvas.width, pt.y * arCanvas.height); else arCtx.lineTo(pt.x * arCanvas.width, pt.y * arCanvas.height); });
                     arCtx.closePath(); arCtx.fillStyle = currentActiveFilter.lipstickColor; arCtx.globalCompositeOperation = 'multiply'; arCtx.fill(); arCtx.restore();
                 }
-                if (currentAccessoryType !== 'none' && currentAccessorySrc) {
+                if (currentAccessoryType === 'glass' && currentAccessorySrc) {
                     const leftEye = landmarks[33], rightEye = landmarks[263];
                     const eyeDistance = Math.hypot(rightEye.x * arCanvas.width - leftEye.x * arCanvas.width, rightEye.y * arCanvas.height - leftEye.y * arCanvas.height);
                     const angle = Math.atan2(rightEye.y * arCanvas.height - leftEye.y * arCanvas.height, rightEye.x * arCanvas.width - leftEye.x * arCanvas.width);
-                    arCtx.save();
-                    if (currentAccessoryType === 'glass') {
-                        const centerX = (leftEye.x * arCanvas.width + rightEye.x * arCanvas.width) / 2, centerY = (leftEye.y * arCanvas.height + rightEye.y * arCanvas.height) / 2;
-                        const glassesW = eyeDistance * 2.3, glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
-                        arCtx.translate(centerX, centerY); arCtx.rotate(angle); arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
-                    } else if (currentAccessoryType === 'hat') {
-                        const hX = landmarks[10].x * arCanvas.width, hY = landmarks[10].y * arCanvas.height;
-                        const hatW = eyeDistance * 3.2, hatH = accessoryImgElement.height * (hatW / accessoryImgElement.width);
-                        arCtx.translate(hX, hY); arCtx.rotate(angle); arCtx.drawImage(accessoryImgElement, -hatW / 2, -hatH * 0.7, hatW, hatH);
-                    }
+                    const centerX = (leftEye.x * arCanvas.width + rightEye.x * arCanvas.width) / 2, centerY = (leftEye.y * arCanvas.height + rightEye.y * arCanvas.height) / 2;
+                    const glassesW = eyeDistance * 2.3, glassesH = accessoryImgElement.height * (glassesW / accessoryImgElement.width);
+                    arCtx.save(); arCtx.translate(centerX, centerY); arCtx.rotate(angle);
+                    arCtx.drawImage(accessoryImgElement, -glassesW / 2, -glassesH / 2, glassesW, glassesH);
                     arCtx.restore();
                 }
             }
@@ -349,6 +405,11 @@
             const tCtx = tempCanvas.getContext('2d');
             tCtx.save(); if (useFrontCamera) { tCtx.translate(tempCanvas.width, 0); tCtx.scale(-1, 1); }
             tCtx.drawImage(arCanvas, 0, 0, tempCanvas.width, tempCanvas.height); tCtx.restore();
+
+            // GHÉP LỚP FILTER 3D VÀO ẢNH CHỤP
+            if (activeFilter3DId !== 'none' && filter3DInstances[activeFilter3DId]) {
+                tCtx.drawImage(canvas3d, 0, 0, tempCanvas.width, tempCanvas.height);
+            }
 
             if (retakingIndex !== -1) { rawImages[retakingIndex] = tempCanvas; retakingIndex = -1; } else { rawImages.push(tempCanvas); }
             document.getElementById('shootCount').innerText = rawImages.length; updateThumbnails();
